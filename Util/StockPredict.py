@@ -14,6 +14,7 @@ from keras import backend as K
 from scipy.signal import savgol_filter
 
 scaler = StandardScaler()
+target_scaler = StandardScaler()
 look_back = 1
 
 def root_mean_squared_error(y_true, y_pred):
@@ -23,13 +24,13 @@ def create_dataset(dataset, look_back):
     pass
 
 def train(train, name, look_back=1):
-    X_train = train[['Open', 'High', 'Low', 'Volume', 'Close']]
+    X_train = train[['Open', 'High', 'Low', 'Close', 'Volume']]
     Y_train = X_train['Close']
     
     X_train = np.array(X_train)
     
     X_train = scaler.transform(X_train)
-    X_train = pd.DataFrame(data=X_train, columns=['Close', 'Open', 'High', 'Low', 'Volume'])
+    X_train = pd.DataFrame(data=X_train, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
 
     print(X_train.describe())
     print(Y_train.describe())
@@ -45,7 +46,7 @@ def train(train, name, look_back=1):
         X_train[tmp_train.columns] = X_train[column_list].shift(s)
 
     X_train = X_train[look_back:]
-    X_train = X_train.drop(['Open', 'High', 'Low', 'Volume', 'Close'], axis=1)
+    X_train = X_train.drop(['Open', 'High', 'Low', 'Close', 'Volume'], axis=1)
     Y_train = Y_train[look_back:]
     
     print(X_train)
@@ -56,9 +57,9 @@ def train(train, name, look_back=1):
     X_train = X_train.reshape(-1,look_back,int(X_train.shape[1]/look_back))
     print(X_train.shape)
 
-    batch_size = 32
+    batch_size = 320
     epochs = 100
-    optimizer = Adam(lr=0.005)
+    optimizer = RMSprop()
 
     model = Sequential()
     model.add(LSTM(input_shape=(X_train.shape[1], X_train.shape[2]),
@@ -66,7 +67,6 @@ def train(train, name, look_back=1):
     model.add(LSTM(output_dim=50, return_sequences=True))
     model.add(LSTM(output_dim=50, return_sequences=False))
     model.add(Dropout(0.2))
-    model.add(Dense(64, activation='relu'))
     model.add(Dense(output_dim=1))
     model.compile(optimizer=optimizer, loss='mape', metrics=['mape'])
     model.summary()
@@ -87,12 +87,12 @@ def eval(data, look_back):
     pass
 
 def test(data, name, look_back=1):    
-    X_data = data[['Open', 'High', 'Low', 'Volume', 'Close']]
+    X_data = data[['Open', 'High', 'Low', 'Close', 'Volume']]
     Y_data = X_data['Close']
     
     X_data = np.array(X_data)
     X_data = scaler.transform(X_data)
-    X_data = pd.DataFrame(X_data, columns=['Open', 'High', 'Low', 'Volume', 'Close'])
+    X_data = pd.DataFrame(X_data, columns=['Open', 'High', 'Low', 'Close', 'Volume'])
 
     print(X_data.describe())
     print(Y_data.describe())
@@ -106,7 +106,7 @@ def test(data, name, look_back=1):
         X_data[tmp_data.columns] = X_data[column_list].shift(s)
 
     X_data = X_data[look_back:]
-    X_data = X_data.drop(['Open', 'High', 'Low', 'Volume', 'Close'], axis=1)
+    X_data = X_data.drop(['Open', 'High', 'Low', 'Close', 'Volume'], axis=1)
     Y_data = Y_data[look_back:]
     
     X_data = np.array(X_data)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     df_stock['Date'] = df_stock['Date'].dt.strftime('%Y-%m-%d')
     df_stock = df_stock.drop(['Adj Close'], axis=1)
     
-    print(df_stock.describe()) 
+    print(df_stock.describe())
     
     df_train = df_stock[df_stock['Date'] < '2019-01-01']
     df_train = df_train.drop(['Date'], axis=1)
@@ -147,6 +147,9 @@ if __name__ == "__main__":
     df_test = df_test.drop(['Date'], axis=1)
     
     scaler.fit(df_train)
+    print(df_train.describe())
     
-    train(df_train, "SSE", 7)
-    test(df_test, "SSE", 7)
+    print(scaler.mean_)
+    
+    #train(df_train, "SSE", 7)
+    #test(df_test, "SSE", 7)
