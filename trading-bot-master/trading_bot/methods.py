@@ -14,13 +14,15 @@ from .ops import (
 )
 
 
-def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=10):
+import time
+
+def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=30):
+    print('train model')
     total_profit = 0
     data_length = len(data) - 1
 
     agent.inventory = []
     avg_loss = []
-
     state = get_state(data, 0, window_size + 1)
 
     for t in tqdm(range(data_length), total=data_length, leave=True, desc='Episode {}/{}'.format(episode, ep_count)):        
@@ -36,9 +38,19 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
-            bought_price = agent.inventory.pop(0)
-            delta = data[t] - bought_price
-            reward = delta #max(delta, 0)
+            stock_list = []
+            for i in agent.inventory:
+                stock_list.append(i)
+            agent.inventory = []
+
+            bought_sum = np.array(stock_list).sum()
+
+            delta = 0
+            for bought_price in stock_list:
+                delta += data[t] - bought_price
+
+            reward = float(delta) / float(bought_sum) * 100
+
             total_profit += delta
 
         # HOLD
@@ -86,15 +98,25 @@ def evaluate_model(agent, data, window_size, debug):
         
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
-            bought_price = agent.inventory.pop(0)
-            delta = data[t] - bought_price
-            reward = delta #max(delta, 0)
+            stock_list = []
+            for i in agent.inventory:
+                stock_list.append(i)
+            agent.inventory = []
+
+            bought_sum = np.array(stock_list).sum()
+
+            delta = 0
+            for bought_price in stock_list:
+                delta += data[t] - bought_price
+
+            reward = float(delta) / float(bought_sum) * 100
+
             total_profit += delta
 
             history.append((data[t], "SELL"))
             if debug:
-                logging.debug("Sell at: {} | Position: {} | Day_Index: {}".format(
-                    format_currency(data[t]), format_position(data[t] - bought_price), t))
+                logging.debug("Sell at: {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
+                    format_currency(data[t]), format_position(delta), format_position(total_profit), format_position(reward), t))
         # HOLD
         else:
             history.append((data[t], "HOLD"))

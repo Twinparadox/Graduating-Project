@@ -38,7 +38,6 @@ from trading_bot.utils import (
     switch_k_backend_device
 )
 
-
 def main(train_stock, val_stock, window_size, batch_size, ep_count,
          strategy="t-dqn", model_name="model_debug", pretrained=False,
          debug=False):
@@ -47,14 +46,19 @@ def main(train_stock, val_stock, window_size, batch_size, ep_count,
 
     Args: [python train.py --help]
     """
+    print("initialize agent")
     agent = Agent(window_size, strategy=strategy, pretrained=pretrained, model_name=model_name)
-    
+
+    print('get stock data')
     train_data = get_stock_data(train_stock)
+    print('get val data')
     val_data = get_stock_data(val_stock)
 
+    # 첫 째날과 둘 째 날의 종가의 차
     initial_offset = val_data[1] - val_data[0]
 
     for episode in range(1, ep_count + 1):
+        print('train episode : ', episode)
         train_result = train_model(agent, episode, train_data, ep_count=ep_count,
                                    batch_size=batch_size, window_size=window_size)
         val_result, _ = evaluate_model(agent, val_data, window_size, debug)

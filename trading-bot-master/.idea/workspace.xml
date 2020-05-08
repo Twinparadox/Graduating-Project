@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="" />
+    <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/getStock.py" beforeDir="false" afterPath="$PROJECT_DIR$/getStock.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/model_debug_10" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_10" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/model_debug_20" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_20" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/model_debug_30" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_30" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/model_debug_40" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_40" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/model_debug_50" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_50" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trading_bot/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trading_bot/methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/methods.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trading_bot/ops.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/ops.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trading_bot/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,9 +29,14 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1ajvwPRUI0q7JkPlB7xQIyRsYqy" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Deep-Reinforcement-Learning-in-Trading-master" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -77,5 +96,16 @@
       <updated>1587262056012</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

@@ -16,6 +16,7 @@ format_position = lambda price: ('-$' if price < 0 else '+$') + '{0:.2f}'.format
 format_currency = lambda price: '${0:.2f}'.format(abs(price))
 
 
+
 def show_train_result(result, val_position, initial_offset):
     """ Displays training results
     """
@@ -37,6 +38,7 @@ def show_eval_result(model_name, profit, initial_offset):
 
 
 def get_stock_data(stock_file):
+    print('get_stock_data()')
     """Reads stock data from csv file
     """
     df = pd.read_csv(stock_file)
