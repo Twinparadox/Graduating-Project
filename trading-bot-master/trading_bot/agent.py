@@ -11,6 +11,7 @@ from keras.models import load_model, clone_model
 from keras.layers import Dense
 from keras.optimizers import Adam
 
+import time
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
     """Huber loss - Custom Loss Function for Q Learning
@@ -27,7 +28,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 class Agent:
     """ Stock Trading Bot """
-
+    # 초기화
     def __init__(self, state_size, strategy="t-dqn", reset_every=1000, pretrained=False, model_name=None):
         self.strategy = strategy
 
@@ -35,8 +36,8 @@ class Agent:
         self.state_size = state_size    	# normalized previous days
         self.action_size = 3           		# [sit, buy, sell]
         self.model_name = model_name
-        self.inventory = []
-        self.memory = deque(maxlen=10000)
+        self.inventory = []                 # 보유 중인 주식
+        self.memory = deque(maxlen=10000)   # 히스토리
         self.first_iter = True
 
         # model config
@@ -51,12 +52,15 @@ class Agent:
         self.optimizer = Adam(lr=self.learning_rate)
 
         if pretrained and self.model_name is not None:
+            print('load model')
             self.model = self.load()
         else:
+            print('create model')
             self.model = self._model()
 
         # strategy config
-        if self.strategy in ["t-dqn", "double-dqn"]:
+        if self.strategy in ["t-dqn", "double-dqn", "dqn"]:
+            print('strategy : ', self.strategy)
             self.n_iter = 1
             self.reset_every = reset_every
 
@@ -65,6 +69,7 @@ class Agent:
             self.target_model.set_weights(self.model.get_weights())
 
     def _model(self):
+        print('create model')
         """Creates the model
         """
         model = Sequential()
@@ -85,6 +90,7 @@ class Agent:
     def act(self, state, is_eval=False):
         """Take action from given possible set of actions
         """
+
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.epsilon:
             return random.randrange(self.action_size)
@@ -110,7 +116,6 @@ class Agent:
                 else:
                     # approximate deep q-learning equation
                     target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-
                 # estimate q-values based on current state
                 q_values = self.model.predict(state)
                 # update the target for current action based on discounted reward
@@ -119,6 +124,7 @@ class Agent:
                 X_train.append(state[0])
                 y_train.append(q_values[0])
 
+        # n_iter 값 변화 없어서 모델 업데이트 되지 않음
         # DQN with fixed targets
         elif self.strategy == "t-dqn":
             if self.n_iter % self.reset_every == 0:
@@ -140,6 +146,7 @@ class Agent:
                 X_train.append(state[0])
                 y_train.append(q_values[0])
 
+        # n_iter 값 변화 없어서 모델 업데이트 되지 않음
         # Double DQN
         elif self.strategy == "double-dqn":
             if self.n_iter % self.reset_every == 0:
