@@ -16,7 +16,7 @@ from .ops import (
 
 import time
 
-def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=30):
+def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=10):
     print('train model')
     total_profit = 0
     data_length = len(data) - 1
@@ -32,30 +32,66 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=3
         # select an action
         action = agent.act(state)
 
+        # # BUY
+        # if action == 1:
+        #     agent.inventory.append(data[t])
+        #
+        # # SELL
+        # elif action == 2 and len(agent.inventory) > 0:
+        #     stock_list = []
+        #     for i in agent.inventory:
+        #         stock_list.append(i)
+        #     agent.inventory = []
+        #
+        #     bought_sum = np.array(stock_list).sum()
+        #
+        #     delta = 0
+        #     for bought_price in stock_list:
+        #         delta += data[t] - bought_price
+        #
+        #     reward = float(delta) / float(bought_sum) * 100
+        #
+        #     total_profit += delta
+
         # BUY
         if action == 1:
-            agent.inventory.append(data[t])
+            if agent.asset < data[t]:
+                pass
+            else:
+                nStocks = agent.asset // 10 // data[t]
+                agent.asset -= nStocks * data[t]
+                agent.inventory.append([data[t], nStocks])
 
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
             stock_list = []
-            for i in agent.inventory:
-                stock_list.append(i)
+            nStocks = 0
+            for item in agent.inventory:
+                stock_list.append(item[0] * item[1])
+                nStocks += item[1]
             agent.inventory = []
 
             bought_sum = np.array(stock_list).sum()
 
-            delta = 0
-            for bought_price in stock_list:
-                delta += data[t] - bought_price
+            delta = data[t] * nStocks - bought_sum
 
-            reward = float(delta) / float(bought_sum) * 100
+            agent.asset += data[t] * nStocks
+
+            reward = delta / agent.origin * 100
 
             total_profit += delta
 
         # HOLD
         else:
-            pass
+            stock_list = []
+            nStocks = 0
+            for item in agent.inventory:
+                stock_list.append(item[0] * item[1])
+                nStocks += item[1]
+
+            bought_sum = np.array(stock_list).sum()
+            delta = data[t] * nStocks - bought_sum
+            reward = delta / agent.origin
 
         done = (t == data_length - 1)
         agent.remember(state, action, reward, next_state, done)
@@ -88,42 +124,92 @@ def evaluate_model(agent, data, window_size, debug):
         # select an action
         action = agent.act(state, is_eval=True)
 
+        # # BUY
+        # if action == 1:
+        #     agent.inventory.append(data[t])
+        #
+        #     history.append((data[t], "BUY"))
+        #     if debug:
+        #         logging.debug("Buy at: {} | Day_Index: {}".format(format_currency(data[t]), t))
+        #
+        # # SELL
+        # elif action == 2 and len(agent.inventory) > 0:
+        #     stock_list = []
+        #     for i in agent.inventory:
+        #         stock_list.append(i)
+        #     agent.inventory = []
+        #
+        #     bought_sum = np.array(stock_list).sum()
+        #
+        #     delta = 0
+        #     for bought_price in stock_list:
+        #         delta += data[t] - bought_price
+        #
+        #     reward = float(delta) / float(bought_sum) * 100
+        #
+        #     total_profit += delta
+        #
+        #     history.append((data[t], "SELL"))
+        #     if debug:
+        #         logging.debug("Sell at: {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
+        #             format_currency(data[t]), format_position(delta), format_position(total_profit), format_position(reward), t))
+
         # BUY
         if action == 1:
-            agent.inventory.append(data[t])
+            if agent.asset < data[t]:
+                history.append((data[t], "HOLD"))
+                if debug:
+                    logging.debug("Cannot Buy, Hold at: {} | Day_Index: {}".format(
+                        format_currency(data[t]), t))
 
-            history.append((data[t], "BUY"))
-            if debug:
-                logging.debug("Buy at: {} | Day_Index: {}".format(format_currency(data[t]), t))
-        
+            else:
+                nStocks = agent.asset // 10 // data[t]
+                agent.asset -= nStocks * data[t]
+                agent.inventory.append([data[t], nStocks])
+
+                history.append((data[t] * nStocks, "BUY"))
+                if debug:
+                    logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[t]), nStocks, t))
+
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
             stock_list = []
-            for i in agent.inventory:
-                stock_list.append(i)
+            nStocks = 0
+            for item in agent.inventory:
+                stock_list.append(item[0] * item[1])
+                nStocks += item[1]
             agent.inventory = []
 
             bought_sum = np.array(stock_list).sum()
 
-            delta = 0
-            for bought_price in stock_list:
-                delta += data[t] - bought_price
+            delta = data[t] * nStocks - bought_sum
 
-            reward = float(delta) / float(bought_sum) * 100
+            agent.asset += data[t] * nStocks
+
+            reward = delta / agent.origin * 100
 
             total_profit += delta
 
-            history.append((data[t], "SELL"))
+            history.append((data[t] * nStocks, "SELL"))
             if debug:
-                logging.debug("Sell at: {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-                    format_currency(data[t]), format_position(delta), format_position(total_profit), format_position(reward), t))
+                logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
+                    format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward, t))
+
         # HOLD
         else:
-            history.append((data[t], "HOLD"))
+            stock_list = []
+            nStocks = 0
+            for item in agent.inventory:
+                stock_list.append(item[0] * item[1])
+                nStocks += item[1]
 
+            bought_sum = np.array(stock_list).sum()
+            delta = data[t] * nStocks - bought_sum
+            reward = delta / agent.origin
+            history.append((data[t], "HOLD"))
             if debug:
-                logging.debug("Hold at: {} | Day_Index: {}".format(
-                    format_currency(data[t]), t))
+                logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(
+                    format_currency(data[t]), reward, t))
 
         done = (t == data_length - 1)
         agent.memory.append((state, action, reward, next_state, done))

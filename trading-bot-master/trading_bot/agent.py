@@ -36,6 +36,8 @@ class Agent:
         self.state_size = state_size    	# normalized previous days
         self.action_size = 3           		# [sit, buy, sell]
         self.model_name = model_name
+        self.asset = 1e7                    # 현재 보유 현금
+        self.origin = 1e7                   # 최초 보유 현금
         self.inventory = []                 # 보유 중인 주식
         self.memory = deque(maxlen=10000)   # 히스토리
         self.first_iter = True
