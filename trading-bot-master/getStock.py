@@ -2,8 +2,8 @@ from pandas_datareader import data
 import yfinance as yf
 yf.pdr_override()
 
-start_date = '2018-12-31'
-end_date = '2020-04-14'
+start_date = '2019-12-31'
+end_date = '2020-05-14'
 
 path = './stockdata/'
 

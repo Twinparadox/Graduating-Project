@@ -29,7 +29,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="t-dqn", reset_every=1000, pretrained=False, model_name=None):
+    def __init__(self, state_size, strategy="dqn", reset_every=1000, pretrained=False, model_name=None):
         self.strategy = strategy
 
         # agent config
@@ -95,6 +95,7 @@ class Agent:
 
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.epsilon:
+            print('radom action')
             return random.randrange(self.action_size)
 
         if self.first_iter:
@@ -102,19 +103,24 @@ class Agent:
             return 1 # make a definite buy on the first iter
 
         action_probs = self.model.predict(state)
+        print(action_probs)
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size):
         """Train on previous experiences in memory
         """
+        # 학습 데이터 샘플링
         mini_batch = random.sample(self.memory, batch_size)
         X_train, y_train = [], []
         
         # DQN
         if self.strategy == "dqn":
             for state, action, reward, next_state, done in mini_batch:
+                # 샘플링 된 데이터가 에피소드의 마지막 데이터일 경우 보상을 그대로 저장
                 if done:
                     target = reward
+                # 샘플링 된 데이터가 에피소드 진행 중의 데이터일 경우
+                # 행동에 대한 보상 + 다음 상태에서 얻을 수 있을거라 예측되는 최대보상 * 할인율
                 else:
                     # approximate deep q-learning equation
                     target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
