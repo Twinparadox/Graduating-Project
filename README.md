@@ -34,3 +34,11 @@ KOSPI, KOSDAQ 상장 종목 중심
 검색어 트렌드 등을 활용하는 것도 유의미한 결과를 보일 것
 
 ## 선행 연구 및 프로젝트
+
+
+## Dataeset
+### 경기 지표
+[국가통계포털 KOSIS](https://kosis.kr/search/search.do)
+
+### 주가 정보
+[한국거래소 Marketdata](http://marketdata.krx.co.kr/mdi)
