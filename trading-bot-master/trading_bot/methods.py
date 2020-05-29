@@ -24,20 +24,17 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
     agent.asset = 1e7
     agent.inventory = []
     avg_loss = []
-    state = get_state(data, 0, window_size + 1)
+    state = get_state(data, 0, window_size + 1, agent.asset)
 
 
     for t in tqdm(range(data_length), total=data_length, leave=True, desc='Episode {}/{}'.format(episode, ep_count)):        
         reward = 0
         delta = 0
-        next_state = get_state(data, t + 1, window_size + 1)
+        next_state = get_state(data, t + 1, window_size + 1, agent.asset)
 
         # select an action
         action = agent.act(state)
 
-        if agent.asset < data[t] and action == 1:
-            action = 0
-        # # BUY
         # if action == 1:
         #     agent.inventory.append(data[t])
         #
@@ -59,8 +56,14 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
         #     total_profit += delta
 
         # BUY
-        if action == 1:
-            print("BUY")
+        if action == 1 and agent.asset < data[t]:
+            # print("BUY")
+
+            nStocks = agent.asset // data[t]
+
+            agent.asset -= nStocks * data[t]
+            agent.inventory.append([data[t], nStocks])
+            '''
             if agent.asset < data[t]:
                 pass
             else:
@@ -71,10 +74,10 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
                 agent.asset -= nStocks * data[t]
                 agent.inventory.append([data[t], nStocks])
-
+            '''
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
-            print("SELL")
+            # print("SELL")
             stock_list = []
             nStocks = 0
             for item in agent.inventory:
@@ -94,7 +97,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
         # HOLD
         else:
-            print("HOLD")
+            # print("HOLD")
             stock_list = []
             nStocks = 0
             for item in agent.inventory:
@@ -108,7 +111,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
             else:
                 reward = 0
 
-        print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
+        # print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
         done = (t == data_length - 1)
         agent.remember(state, action, reward, next_state, done)
 
@@ -134,12 +137,12 @@ def evaluate_model(agent, data, window_size, debug):
     agent.asset = 1e7
     agent.inventory = []
     
-    state = get_state(data, 0, window_size + 1)
+    state = get_state(data, 0, window_size + 1, agent.asset)
 
     for t in range(data_length):        
         reward = 0
         delta = 0
-        next_state = get_state(data, t + 1, window_size + 1)
+        next_state = get_state(data, t + 1, window_size + 1, agent.asset)
         
         # select an action
         action = agent.act(state, is_eval=True)

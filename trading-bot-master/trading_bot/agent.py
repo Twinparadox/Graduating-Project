@@ -8,7 +8,7 @@ import keras.backend as K
 
 from keras.models import Sequential
 from keras.models import load_model, clone_model
-from keras.layers import Dense
+from keras.layers import Dense, LSTM
 from keras.optimizers import Adam
 
 import time
@@ -33,7 +33,7 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size    	# normalized previous days
+        self.state_size = state_size + 1   	# normalized previous days, present asset, present price
         self.action_size = 3           		# [sit, buy, sell]
         self.model_name = model_name
         self.asset = 1e7                    # 현재 보유 현금
@@ -47,7 +47,7 @@ class Agent:
         self.gamma = 0.95 # affinity for long term reward
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
@@ -57,7 +57,6 @@ class Agent:
             print('load model')
             self.model = self.load()
         else:
-            print('create model')
             self.model = self._model()
 
         # strategy config
@@ -95,7 +94,6 @@ class Agent:
 
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.epsilon:
-            print('radom action')
             return random.randrange(self.action_size)
 
         if self.first_iter:
@@ -103,7 +101,6 @@ class Agent:
             return 1 # make a definite buy on the first iter
 
         action_probs = self.model.predict(state)
-        print(action_probs)
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size):
@@ -124,28 +121,6 @@ class Agent:
                 else:
                     # approximate deep q-learning equation
                     target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-                # estimate q-values based on current state
-                q_values = self.model.predict(state)
-                # update the target for current action based on discounted reward
-                q_values[0][action] = target
-
-                X_train.append(state[0])
-                y_train.append(q_values[0])
-
-        # n_iter 값 변화 없어서 모델 업데이트 되지 않음
-        # DQN with fixed targets
-        elif self.strategy == "t-dqn":
-            if self.n_iter % self.reset_every == 0:
-                # reset target model weights
-                self.target_model.set_weights(self.model.get_weights())
-
-            for state, action, reward, next_state, done in mini_batch:
-                if done:
-                    target = reward
-                else:
-                    # approximate deep q-learning equation with fixed targets
-                    target = reward + self.gamma * np.amax(self.target_model.predict(next_state)[0])
-
                 # estimate q-values based on current state
                 q_values = self.model.predict(state)
                 # update the target for current action based on discounted reward
@@ -183,14 +158,14 @@ class Agent:
         loss = self.model.fit(
             np.array(X_train), np.array(y_train),
             epochs=1, verbose=0
-        ).history["loss"][0]
+        ).history["loss"]
 
         # as the training goes on we want the agent to
         # make less random and more optimal decisions
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-        return loss
+        return loss[0]
 
     def save(self, episode):
         self.model.save("models/{}_{}".format(self.model_name, episode))
