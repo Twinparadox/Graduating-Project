@@ -3,12 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/getStock.py" beforeDir="false" afterPath="$PROJECT_DIR$/getStock.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_10" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_10" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_20" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_20" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_30" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_30" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_40" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_40" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_50" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_50" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/eval.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trading_bot/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/agent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trading_bot/methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/methods.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trading_bot/ops.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/ops.py" afterDir="false" />
@@ -34,7 +29,7 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$/Desktop/세미나/조선과(영상처리)" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Downloads/Graduating-Project-master" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
