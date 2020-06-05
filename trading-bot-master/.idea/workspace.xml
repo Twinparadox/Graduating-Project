@@ -3,11 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eval.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trading_bot/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trading_bot/methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/methods.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trading_bot/ops.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/ops.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/getStock.py" beforeDir="false" afterPath="$PROJECT_DIR$/getStock.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
