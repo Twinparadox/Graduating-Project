@@ -59,7 +59,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
         # BUY
         if action == 1:
-            print("BUY")
+            # print("BUY")
             if agent.asset < data[t]:
                 pass
             else:
@@ -73,7 +73,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
         # SELL
         elif action == 2 and len(agent.inventory) > 0:
-            print("SELL")
+            # print("SELL")
             stock_list = []
             nStocks = 0
             for item in agent.inventory:
@@ -93,7 +93,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
 
         # HOLD
         else:
-            print("HOLD")
+            # print("HOLD")
             stock_list = []
             nStocks = 0
             for item in agent.inventory:
@@ -107,7 +107,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
             else:
                 reward = 0
 
-        print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
+        # print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
         done = (t == data_length - 1)
         agent.remember(state, action, reward, next_state, done)
 
@@ -180,7 +180,6 @@ def evaluate_model(agent, data, window_size, debug):
                 if debug:
                     logging.debug("Cannot Buy, Hold at: {} | Day_Index: {}".format(
                         format_currency(data[t]), t))
-
             else:
                 nStocks = agent.asset // data[t]
 
@@ -211,13 +210,14 @@ def evaluate_model(agent, data, window_size, debug):
 
             reward = delta / bought_sum * 100
 
+
             total_profit += delta
 
             history.append((data[t] * nStocks, "SELL"))
             if debug:
                 logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-                    format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward,
-                    t))
+                format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward,
+                t))
 
         # HOLD
         else:

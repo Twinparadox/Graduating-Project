@@ -49,7 +49,7 @@ class Agent:
         self.gamma = 0.95  # affinity for long term reward
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
@@ -97,7 +97,7 @@ class Agent:
 
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.epsilon:
-            print('radom action')
+            # print('radom action')
             return random.randrange(self.action_size)
 
         if self.first_iter:
@@ -105,7 +105,7 @@ class Agent:
             return 1  # make a definite buy on the first iter
 
         action_probs = self.model.predict(state)
-        print(action_probs)
+        # print(action_probs)
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size):
