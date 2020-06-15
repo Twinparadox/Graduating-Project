@@ -27,13 +27,15 @@ from trading_bot.utils import (
     show_eval_result,
     switch_k_backend_device
 )
-from .ops import (
+from trading_bot.ops import (
     get_state
 )
 
 from flask import Flask
 from flask_restful import Resource, Api
 from flask_restful import reqparse
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 app = Flask(__name__)
 api = Api(app)
@@ -213,6 +215,19 @@ def main(eval_stock, window_size, model_name, debug):
         show_eval_result(model_name, profit, initial_offset)
 
 
+### TODO : APSCheduler를 Threading으로 대체할 수 있을지 파악이 필요
+count = 0
+def sensor():
+    global count
+    sched.print_jobs()
+    print('Count: ' , count)
+    count += 1
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(sensor,'interval',seconds=10)
+sched.start()
+
+
 if __name__ == '__main__':
     #args = docopt(__doc__)
     #eval_stock = args["<eval-stock>"]
@@ -224,7 +239,7 @@ if __name__ == '__main__':
     switch_k_backend_device()
 
     try:
-        app.run(debug=True)
+        app.run()
 
     except KeyboardInterrupt:
         print("Aborted")
