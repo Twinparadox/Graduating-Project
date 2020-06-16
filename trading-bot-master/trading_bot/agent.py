@@ -96,9 +96,7 @@ class Agent:
         self.memory.append((state, action, reward, next_state, done))
 
     def buy_act(self, state, is_eval=False):
-        """Take action from given possible set of actions
-        """
-
+        # buy action
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.buy_epsilon:
             return random.randrange(self.action_size)
@@ -111,9 +109,7 @@ class Agent:
         return np.argmax(action_probs[0])
 
     def sell_act(self, state, is_eval=False):
-        """Take action from given possible set of actions
-        """
-
+        # Sell Action
         # take random action in order to diversify experience at the beginning
         if not is_eval and random.random() <= self.sell_epsilon:
             return random.randrange(self.action_size)
@@ -182,8 +178,8 @@ class Agent:
             epochs=1, verbose=0
         ).history["loss"]
 
-        # as the training goes on we want the agent to
-        # make less random and more optimal decisions
+        #TODO epsilon 분기
+        # buy epslion, sell epsilon 나눠야함
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -192,8 +188,10 @@ class Agent:
     def save(self, episode):
         self.model.save("models/{}_{}".format(self.model_name, episode))
 
+    # buy 모델 불러오기
     def buy_load(self):
         return load_model("models/" + self.buy_model_name, custom_objects=self.custom_objects)
 
+    # sell 모델 불러오기
     def sell_load(self):
         return load_model("models/" + self.sell_model_name, custom_objects=self.custom_objects)
