@@ -10,6 +10,11 @@ from keras.models import Sequential
 from keras.models import load_model, clone_model
 from keras.layers import Dense
 from keras.optimizers import Adam
+# 전역 변수 문제로 추가한 부분
+from tensorflow.python.keras.backend import set_session
+sess = tf.Session()
+graph = tf.get_default_graph()
+
 
 import time
 
@@ -104,7 +109,12 @@ class Agent:
             self.first_iter = False
             return 1  # make a definite buy on the first iter
 
-        action_probs = self.model.predict(state)
+        # 전역 변수 문제로 추가한 부분
+        global sess
+        global graph
+        with graph.as_default():
+            set_session(sess)
+            action_probs = self.model.predict(state)
         # print(action_probs)
         return np.argmax(action_probs[0])
 
@@ -199,4 +209,5 @@ class Agent:
         self.model.save("models/{}_{}".format(self.model_name, episode))
 
     def load(self):
+        set_session(sess)
         return load_model("models/" + self.model_name, custom_objects=self.custom_objects)
