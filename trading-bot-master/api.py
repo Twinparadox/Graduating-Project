@@ -1,22 +1,8 @@
-"""
-Script for evaluating Stock Trading Bot.
-
-Usage:
-  eval.py <eval-stock> [--window-size=<window-size>] [--model-name=<model-name>] [--debug]
-
-Options:
-  --window-size=<window-size>   Size of the n-day window stock data representation used as the feature vector. [default: 10]
-  --model-name=<model-name>     Name of the pretrained model to use (will eval all models in `models/` if unspecified).
-  --debug                       Specifies whether to use verbose logs during eval operation.
-"""
-
 import os
 import logging
 import numpy as np
 import pandas as pd
 import coloredlogs
-
-from docopt import docopt
 
 from trading_bot.agent import Agent
 from trading_bot.methods import evaluate_model
@@ -76,55 +62,35 @@ class Trader(Resource):
 api.add_resource(CreateUser, '/user')
 api.add_resource(Trader, '/trader')
 
-
+# TODO: 전역변수를 최대한 사용하지 않도록 설계해야 함
 ### RL Trader ###
-def evaluate_model(agent, data, window_size, debug):
-    total_profit = 0
-    data_length = len(data) - 1
+agent = []
+data = []
+data_length = 0
 
-    history = []
-    agent.asset = 1e7
-    agent.inventory = []
+initial_offset = []
+window_size = []
+model_name = []
+args = []
+eval_stock = []
+debug = []
+total_profit = 0
+history = []
+state = []
 
-    state = get_state(data, 0, window_size + 1)
+done = False
+t = 0
 
-    for t in range(data_length):
+
+### TODO : 기존의 evaluate_model에서 for문만 제거하고 Scheduler가 호출할 시 action 수행
+def evaluate_model(agent, data, window_size, state, debug):
+    if t < data_length:
         reward = 0
         delta = 0
         next_state = get_state(data, t + 1, window_size + 1)
 
         # select an action
         action = agent.act(state, is_eval=True)
-
-        # # BUY
-        # if action == 1:
-        #     agent.inventory.append(data[t])
-        #
-        #     history.append((data[t], "BUY"))
-        #     if debug:
-        #         logging.debug("Buy at: {} | Day_Index: {}".format(format_currency(data[t]), t))
-        #
-        # # SELL
-        # elif action == 2 and len(agent.inventory) > 0:
-        #     stock_list = []
-        #     for i in agent.inventory:
-        #         stock_list.append(i)
-        #     agent.inventory = []
-        #
-        #     bought_sum = np.array(stock_list).sum()
-        #
-        #     delta = 0
-        #     for bought_price in stock_list:
-        #         delta += data[t] - bought_price
-        #
-        #     reward = float(delta) / float(bought_sum) * 100
-        #
-        #     total_profit += delta
-        #
-        #     history.append((data[t], "SELL"))
-        #     if debug:
-        #         logging.debug("Sell at: {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-        #             format_currency(data[t]), format_position(delta), format_position(total_profit), format_position(reward), t))
 
         # BUY
         if action == 1:
@@ -200,14 +166,6 @@ def evaluate_model(agent, data, window_size, debug):
             return total_profit, history
 
 def main(eval_stock, window_size, model_name, debug):
-    """ Evaluates the stock trading bot.
-    Please see https://arxiv.org/abs/1312.5602 for more details.
-
-    Args: [python eval.py --help]
-    """
-    data = get_stock_data(eval_stock)
-    initial_offset = data[1] - data[0]
-
     # Single Model Evaluation
     if model_name is not None:
         agent = Agent(window_size, pretrained=True, model_name=model_name)
@@ -223,20 +181,38 @@ def sensor():
     print('Count: ' , count)
     count += 1
 
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(sensor,'interval',seconds=10)
-sched.start()
-
+def action():
+    evaluate_model(agent, data, window_size, state, debug)
 
 if __name__ == '__main__':
     #args = docopt(__doc__)
-    #eval_stock = args["<eval-stock>"]
-    #window_size = int(args["--window-size"])
-    #model_name = args["--model-name"]
-    #debug = args["--debug"]
+    eval_stock = 'data/SS_2019.csv'
+    window_size = 10
+    model_name = 'model_debug_50'
+    debug = '--debug'
 
     coloredlogs.install(level="DEBUG")
     switch_k_backend_device()
+
+    ### Initialize Trader
+    data = get_stock_data(eval_stock)
+    initial_offset = data[1] - data[0]
+
+    t = 0
+    total_profit = 0
+    data_length = len(data) - 1
+
+    history = []
+    agent = Agent(window_size, pretrained=True, model_name=model_name)
+    agent.asset = 1e7
+    agent.inventory = []
+
+    state = get_state(data, 0, window_size + 1)
+
+    ### Start APScheduler.BackgroundScheduler
+    sched = BackgroundScheduler(daemon=True)
+    sched.add_job(sensor, 'interval', seconds=10)
+    sched.start()
 
     try:
         app.run()
