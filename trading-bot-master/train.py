@@ -16,7 +16,7 @@ Options:
                                     used as the feature vector. [default: 10]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
                                     during training. [default: 32]
-  --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 50]
+  --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 1000]
   --model-name=<model-name>         Name of the pretrained model to use. [default: model_debug]
   --pretrained                      Specifies whether to continue training a previously
                                     trained model (reads `model-name`).
@@ -39,7 +39,7 @@ from trading_bot.utils import (
 )
 
 def main(train_stock, val_stock, window_size, batch_size, ep_count,
-         strategy="t-dqn", model_name="model_debug", pretrained=False,
+         strategy="dqn", model_name="model_debug", pretrained=False,
          debug=False):
     """ Trains the stock trading bot using Deep Q-Learning.
     Please see https://arxiv.org/abs/1312.5602 for more details.
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     try:
         main(train_stock, val_stock, window_size, batch_size,
-             ep_count, strategy=strategy, model_name=model_name,
+             ep_count, strategy=strategy, model_name=model_name, 
              pretrained=pretrained, debug=debug)
     except KeyboardInterrupt:
         print("Aborted!")
