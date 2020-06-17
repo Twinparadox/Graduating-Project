@@ -27,23 +27,24 @@ app = Flask(__name__)
 api = Api(app)
 end = False
 
-    def post(self):
-        try:
 class Trader(Resource):
-    def post(self):
+    def get(self):
         try:
-            parser = reqparse.RequestParser()
-            parser.add_argument('email', type=str)
-            parser.add_argument('user_name', type=str)
-            parser.add_argument('password', type=str)
-            args = parser.parse_args()
-
-            _userEmail = args['email']
-            _userName = args['user_name']
-            _userPassword = args['password']
-            return {'Email': args['email'], 'UserName': args['user_name'], 'Password': args['password']}
+            # parser.add_argument('email', type=str)
+            # parser.add_argument('user_name', type=str)
+            # parser.add_argument('password', type=str)
+            # args = parser.parse_args()
+            #
+            # _userEmail = args['email']
+            # _userName = args['user_name']
+            # _userPassword = args['password']
+            return {'History': history[-10:], 'Buy': num_buy, 'Sell':num_sell, 'CannotBuy':num_cannotbuy,
+                     'CannotSell':num_cannotsell, 'Hold':num_hold}
         except Exception as e:
             return {'error': str(e)}
+
+    def post(self):
+        pass
 
 api.add_resource(Trader, '/trader')
 
@@ -60,9 +61,16 @@ history = []
 
 t = 0
 
+num_buy = 0
+num_sell = 0
+num_cannotbuy = 0
+num_cannotsell = 0
+num_hold = 0
+
 ### TODO : 시각화 진행 및 로그 출력
 def trade_stock(agent, data, window_size, state, debug):
     global total_profit
+    global num_buy, num_sell, num_cannotbuy, num_cannotsell, num_hold
 
     profit = 0
     reward = 0
@@ -77,10 +85,12 @@ def trade_stock(agent, data, window_size, state, debug):
     # BUY
     if action == 1:
         if agent.asset < data[t]:
-            history.append((data[t], "HOLD"))
+            history.append((t, data[t], "Cannot BUY"))
             if debug:
                 logging.debug("Cannot Buy, Hold at: {} | Day_Index: {}".format(
                     format_currency(data[t]), t))
+
+            num_cannotbuy += 1
 
         else:
             nStocks = agent.asset // data[t]
@@ -91,33 +101,47 @@ def trade_stock(agent, data, window_size, state, debug):
             agent.asset -= nStocks * data[t]
             agent.inventory.append([data[t], nStocks])
 
-            history.append((data[t] * nStocks, "BUY"))
+            history.append((t, data[t], nStocks, "BUY"))
             if debug:
                 logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[t]), nStocks, t))
 
+            num_buy += 1
+
     # SELL
-    elif action == 2 and len(agent.inventory) > 0:
-        stock_list = []
-        nStocks = 0
-        for item in agent.inventory:
-            stock_list.append(item[0] * item[1])
-            nStocks += item[1]
-        agent.inventory = []
+    elif action == 2:
+        if len(agent.inventory) > 0:
+            stock_list = []
+            nStocks = 0
+            for item in agent.inventory:
+                stock_list.append(item[0] * item[1])
+                nStocks += item[1]
+            agent.inventory = []
 
-        bought_sum = np.array(stock_list).sum()
+            bought_sum = np.array(stock_list).sum()
 
-        delta = data[t] * nStocks - bought_sum
+            delta = data[t] * nStocks - bought_sum
 
-        agent.asset += data[t] * nStocks
+            agent.asset += data[t] * nStocks
 
-        reward = delta / bought_sum * 100
+            reward = delta / bought_sum * 100
 
-        total_profit += delta
+            total_profit += delta
 
-        history.append((data[t] * nStocks, "SELL"))
-        if debug:
-            logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-                format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward, t))
+            history.append((t, data[t], nStocks, "SELL"))
+            if debug:
+                logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
+                    format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward, t))
+
+            num_sell += 1
+
+        else:
+            history.append((t, data[t], "Cannot SELL"))
+            if debug:
+                logging.debug("Cannot Sell, Hold at: {} | Day_Index: {}".format(
+                    format_currency(data[t]), t))
+
+            num_cannotsell += 1
+
 
     # HOLD
     else:
@@ -134,10 +158,12 @@ def trade_stock(agent, data, window_size, state, debug):
             reward = delta / bought_sum
         else:
             reward = 0
-        history.append((data[t], "HOLD"))
+        history.append((t, data[t], "HOLD"))
         if debug:
             logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(
                 format_currency(data[t]), reward, t))
+
+        num_hold += 1
 
     done = (t == data_length - 1)
     agent.memory.append((state, action, reward, next_state, done))
@@ -202,7 +228,7 @@ if __name__ == '__main__':
 
     ### Start APScheduler.BackgroundScheduler
     sched = BackgroundScheduler(daemon=True)
-    sched.add_job(time_lapse, 'interval', kwargs=kwargs, seconds=10)
+    sched.add_job(time_lapse, 'interval', kwargs=kwargs, seconds=0.5)
     sched.start()
 
     try:
