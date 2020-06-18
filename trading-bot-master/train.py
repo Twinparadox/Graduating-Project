@@ -11,7 +11,7 @@ Options:
   --strategy=<strategy>             Q-learning strategy to use for training the network. Options:
                                       `dqn` i.e. Vanilla DQN,
                                       `t-dqn` i.e. DQN with fixed target distribution,
-                                      `double-dqn` i.e. DQN with separate network for value estimation. [default: t-dqn]
+                                      `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
                                     used as the feature vector. [default: 10]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     try:
         main(train_stock, val_stock, window_size, batch_size,
-             ep_count, strategy=strategy, model_name=model_name, 
+             ep_count, strategy=strategy, model_name=model_name,
              pretrained=pretrained, debug=debug)
     except KeyboardInterrupt:
         print("Aborted!")

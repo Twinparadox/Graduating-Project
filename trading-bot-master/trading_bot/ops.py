@@ -16,7 +16,7 @@ def sigmoid(x):
         print("Error in sigmoid: " + err)
 
 
-def get_state(data, t, n_days, asset):
+def get_state(data, t, n_days):
     """Returns an n-day state representation ending at time t
     """
     d = t - n_days + 1
@@ -26,5 +26,4 @@ def get_state(data, t, n_days, asset):
     for i in range(n_days - 1):
         res.append(sigmoid(block[i + 1] - block[i]))
 
-    res.append(sigmoid(asset-data[t]))
     return np.array([res])
