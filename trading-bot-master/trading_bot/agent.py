@@ -33,10 +33,10 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size   	# normalized previous days, present asset, present price
+        self.state_size = state_size*2  	# normalized previous days, present asset, present price
         self.action_size = 2           		# [sit, buy, sell]
-        self.buy_model_name = 'buy' + model_name
-        self.sell_model_name = 'sell' + model_name
+        self.buy_model_name = 'buy_' + model_name
+        self.sell_model_name = 'sell_' + model_name
         self.asset = 1e7                    # 현재 보유 현금
         self.origin = 1e7                   # 최초 보유 현금
         self.inventory = []                 # 보유 중인 주식
@@ -45,8 +45,8 @@ class Agent:
         self.first_iter = True
 
         # model config
-        self.buy_model_name = 'buy' + model_name
-        self.sell_model_name = 'sell' + model_name
+        self.buy_model_name = 'buy_' + model_name
+        self.sell_model_name = 'sell_' + model_name
         self.gamma = 0.95 # affinity for long term reward
         self.buy_epsilon = 1.0
         self.sell_epsilon = 1.0

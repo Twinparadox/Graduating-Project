@@ -42,7 +42,7 @@ def get_stock_data(stock_file):
     """Reads stock data from csv file
     """
     df = pd.read_csv(stock_file)
-    return list(df['Close'])
+    return list(df['Close']), list(df['Volume'])
 
 
 def switch_k_backend_device():

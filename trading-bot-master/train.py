@@ -55,14 +55,18 @@ def main(train_stock, val_stock, window_size, batch_size, ep_count,
     val_data = get_stock_data(val_stock)
 
     # 첫 째날과 둘 째 날의 종가의 차
-    initial_offset = val_data[1] - val_data[0]
+    initial_offset = val_data[0][1] - val_data[0][0]
+    last_checkpoint = 0
 
     for episode in range(1, ep_count + 1):
         print('train episode : ', episode)
-        train_result = train_model(agent, episode, train_data, ep_count=ep_count,
-                                   batch_size=batch_size, window_size=window_size)
+        train_result, is_earlystopping = train_model(agent, episode, train_data, ep_count=ep_count,
+                                                     batch_size=batch_size, window_size=window_size, last_checkpoint=last_checkpoint)
         val_result, _ = evaluate_model(agent, val_data, window_size, debug)
         show_train_result(train_result, val_result, initial_offset)
+
+        if is_earlystopping == False:
+            last_checkpoint = episode
 
 
 if __name__ == "__main__":
