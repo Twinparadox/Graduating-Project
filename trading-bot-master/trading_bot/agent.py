@@ -189,6 +189,7 @@ class Agent:
                 sell_X_train.append(state[0])
                 sell_y_train.append(q_values[0])
 
+        # TODO : ADD DDQN, Dueling DQN, TDQN
         # update q-function parameters based on huber loss gradient
         sell_loss = self.sell_model.fit(
             np.array(sell_X_train), np.array(sell_y_train),
@@ -198,7 +199,7 @@ class Agent:
         if self.sell_epsilon > self.epsilon_min:
             self.sell_epsilon *= self.epsilon_decay
 
-        loss = buy_loss[0] + sell_loss[0]
+        loss = (buy_loss[0] + sell_loss[0])/2
 
         return loss
 

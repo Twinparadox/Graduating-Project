@@ -211,24 +211,13 @@ def evaluate_model(agent, data, window_size, debug):
                     ))
             else:
                 sell_hold += 1
-                stock_list = []
-                nStocks = 0
-                for item in agent.inventory:
-                    stock_list.append(item[0] * item[1])
-                    nStocks += item[1]
-
-                bought_sum = np.array(stock_list).sum()
-                delta = data[0][t] * nStocks - bought_sum
-
-                reward = delta / bought_sum
 
                 history.append((data[0][t], "Sell HOLD"))
                 if debug:
-                    logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(
-                        format_currency(data[0][t]), reward, t))
+                    logging.debug("Hold at: {} | Day_Index: {}".format(
+                        format_currency(data[0][t]), t))
 
         done = (t == data_length - 1)
-        # agent.memory.append((state, action, reward, next_state, done))
 
         state = next_state
 
