@@ -8,3 +8,6 @@ coloredlogs==10.0
 jupyterlab==1.0.1
 altair==4.0.0
 seaborn==0.9.0
+flask==1.1.1
+flask-restful==0.3.8
+apscheduler=3.6.3
