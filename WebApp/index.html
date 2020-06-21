@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Toast UI -->
+    <link rel="stylesheet" href="https://uicdn.toast.com/tui.chart/latest/tui-chart.css">
+    <script src="https://uicdn.toast.com/tui.chart/latest/tui-chart-all.js"></script>
+
+    <title>Test GUI</title>
+</head>
+<body>
+    <div id="chart-area"></div>
+
+    <script>
+        function getRandom(start, end) {
+            return start + (Math.floor(Math.random() * (end - start + 1)));
+        }
+
+        function zeroFill(number) {
+            var filledNumber;
+
+            if (number < 10) {
+                filledNumber = '0' + number;
+            } else {
+                filledNumber = number;
+            }
+
+            return filledNumber;
+        }
+
+        function adjustTime(time, addTime) {
+            addTime = addTime || 60;
+            if (time < 0) {
+                time += addTime;
+            }
+            return time;
+        }
+
+        function makeDate(hour, minute, second) {
+            return zeroFill(adjustTime(hour, 24)) + ':' + zeroFill(adjustTime(minute)) + ':' + zeroFill(adjustTime(second));
+        }
+
+        function range(start, stop, step) {
+            var arr = [];
+            var flag;
+
+            if (typeof stop === 'undefined') {
+                stop = start || 0;
+                start = 0;
+            }
+
+            step = step || 1;
+            flag = step < 0 ? -1 : 1;
+            stop *= flag;
+
+            for (; start * flag < stop; start += step) {
+                arr.push(start);
+            }
+
+            return arr;
+        }
+
+        var legends = ['SiteA', 'SiteB'];
+        var seriesData = range(2).map(function (value, index) {
+            var name = legends[index];
+            var data = range(20).map(function () {
+                return getRandom(150, 200);
+            });
+            return {
+                name: name,
+                data: data
+            };
+        });
+        var baseNow = new Date();
+        var startSecond = baseNow.getSeconds() - seriesData[0].data.length - 1;
+        var categories = seriesData[0].data.map(function (value, index) {
+            var hour = baseNow.getHours();
+            var minute = baseNow.getMinutes();
+            var second = startSecond + index;
+
+            if (second < 0) {
+                minute -= 1;
+            }
+
+            if (minute < 0) {
+                hour -= 1;
+            }
+            return makeDate(hour, minute, (startSecond + index));
+        });
+        var container = document.getElementById("chart-area");
+        var data = {
+            categories: categories,
+            series: seriesData
+        };
+        var options = {
+            chart: {
+                width: 1160,
+                height: 540,
+                title: 'Concurrent users'
+            },
+            xAxis: {
+                title: 'seconds',
+                labelInterval: 3,
+                tickInterval: 'auto'
+            },
+            yAxis: {
+                title: 'users'
+            },
+            series: {
+                showDot: true,
+                shift: true
+            },
+            tooltip: {
+                grouped: true
+            }
+        };
+        var chart = tui.chart.lineChart(container, data, options);
+
+        chart.on('load', function () {
+            var index = categories.length;
+            setInterval(function () {
+                var now = new Date();
+                var category = makeDate(now.getHours(), now.getMinutes(), now.getSeconds());
+                var values = [getRandom(150, 200), getRandom(150, 200)];
+
+                chart.addData(category, values);
+                index += 1;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

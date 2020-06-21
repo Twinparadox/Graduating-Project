@@ -27,6 +27,8 @@ app = Flask(__name__)
 api = Api(app)
 end = False
 
+parser = reqparse.RequestParser()
+
 class Trader(Resource):
     def get(self):
         try:
@@ -44,7 +46,17 @@ class Trader(Resource):
             return {'error': str(e)}
 
     def post(self):
-        pass
+        try:
+            parser.add_argument('names', type=str)
+            parser.add_argument('days', type=int)
+            args = parser.parse_args()
+
+            _corpName = args['names']
+            _days = args['days']
+            return {'History': history[-_days:], 'Buy': num_buy, 'Sell':num_sell, 'CannotBuy':num_cannotbuy,
+                     'CannotSell':num_cannotsell, 'Hold':num_hold}
+        except Exception as e:
+            return {'error': str(e)}
 
 api.add_resource(Trader, '/trader')
 
@@ -189,14 +201,8 @@ def time_lapse(**kwargs):
     debug = kwargs['debug']
 
     if t < data_length - 1:
-        print(agent)
-        print(data)
-        print(window_size)
-        print(state)
         profit, next_state = trade_stock(agent, data, window_size, state, debug)
         state = next_state
-
-        print(profit)
 
         t += 1
     else:
