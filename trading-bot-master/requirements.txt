@@ -10,4 +10,5 @@ altair==4.0.0
 seaborn==0.9.0
 flask==1.1.1
 flask-restful==0.3.8
+flask-cors==3.0.8
 apscheduler=3.6.3

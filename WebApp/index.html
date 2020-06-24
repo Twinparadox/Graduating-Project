@@ -7,10 +7,15 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/tui.chart/latest/tui-chart.css">
     <script src="https://uicdn.toast.com/tui.chart/latest/tui-chart-all.js"></script>
 
+    <!-- jQuery for AJAX -->
+    <script src="static/js/jquery/jquery.min.js"></script>
+
+
     <title>Test GUI</title>
 </head>
 <body>
     <div id="chart-area"></div>
+    <button id="btn" onclick="refresh()"></button>
 
     <script>
         function getRandom(start, end) {
@@ -61,7 +66,26 @@
             return arr;
         }
 
-        var legends = ['SiteA', 'SiteB'];
+        function getData(history) {
+
+        }
+
+        function getCategory(history) {
+        }
+
+        function refresh() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:5000/trader",
+                success: function(data) {
+                    alert(data.Buy)
+                    getData(data.History)
+                    getCategory(data.History)
+                }
+            });
+        }
+
+        var legends = ['삼성전자', '현대자동차'];
         var seriesData = range(2).map(function (value, index) {
             var name = legends[index];
             var data = range(20).map(function () {
@@ -117,17 +141,6 @@
         };
         var chart = tui.chart.lineChart(container, data, options);
 
-        chart.on('load', function () {
-            var index = categories.length;
-            setInterval(function () {
-                var now = new Date();
-                var category = makeDate(now.getHours(), now.getMinutes(), now.getSeconds());
-                var values = [getRandom(150, 200), getRandom(150, 200)];
-
-                chart.addData(category, values);
-                index += 1;
-            }, 1000);
-        });
     </script>
 </body>
 </html>

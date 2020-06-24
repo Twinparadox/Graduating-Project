@@ -18,17 +18,21 @@ from trading_bot.ops import (
 )
 
 from flask import Flask
-from flask_restful import Resource, Api
-from flask_restful import reqparse
+from flask_restful import Resource, Api, reqparse
+from flask_cors import CORS
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
 end = False
 
 parser = reqparse.RequestParser()
 
+
+# TODO 거래 기록을 DB에서 가져오게 하는 것이 타당할 듯, 현재는 History에서 보내는 중
 class Trader(Resource):
     def get(self):
         try:
@@ -58,7 +62,18 @@ class Trader(Resource):
         except Exception as e:
             return {'error': str(e)}
 
+
+#TODO 주식, 경제 지표 조회용 API, DB와 연동 필요할 듯
+class Stock(Resource):
+    def get(self):
+        pass
+
+    def post(self):
+        pass
+
+
 api.add_resource(Trader, '/trader')
+api.add_resource(Stock, '/stock')
 
 # TODO: 전역변수를 최대한 사용하지 않도록 설계해야 함
 ### RL Trader ###
@@ -97,7 +112,7 @@ def trade_stock(agent, data, window_size, state, debug):
     # BUY
     if action == 1:
         if agent.asset < data[t]:
-            history.append((t, data[t], "Cannot BUY"))
+            history.append({"index":t, "price":data[t], "action":"Cannot BUY"})
             if debug:
                 logging.debug("Cannot Buy, Hold at: {} | Day_Index: {}".format(
                     format_currency(data[t]), t))
@@ -113,7 +128,7 @@ def trade_stock(agent, data, window_size, state, debug):
             agent.asset -= nStocks * data[t]
             agent.inventory.append([data[t], nStocks])
 
-            history.append((t, data[t], nStocks, "BUY"))
+            history.append({"index":t, "price":data[t], "nStocks":nStocks, "action":"BUY"})
             if debug:
                 logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[t]), nStocks, t))
 
@@ -139,7 +154,7 @@ def trade_stock(agent, data, window_size, state, debug):
 
             total_profit += delta
 
-            history.append((t, data[t], nStocks, "SELL"))
+            history.append({"index":t, "price":data[t], "nStocks":nStocks, "action":"SELL"})
             if debug:
                 logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
                     format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward, t))
@@ -147,7 +162,7 @@ def trade_stock(agent, data, window_size, state, debug):
             num_sell += 1
 
         else:
-            history.append((t, data[t], "Cannot SELL"))
+            history.append({"index":t, "price":data[t], "action":"Cannot SELL"})
             if debug:
                 logging.debug("Cannot Sell, Hold at: {} | Day_Index: {}".format(
                     format_currency(data[t]), t))
@@ -170,7 +185,8 @@ def trade_stock(agent, data, window_size, state, debug):
             reward = delta / bought_sum
         else:
             reward = 0
-        history.append((t, data[t], "HOLD"))
+
+        history.append({"index":t, "price":data[t], "action":"HOLD"})
         if debug:
             logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(
                 format_currency(data[t]), reward, t))
@@ -234,7 +250,7 @@ if __name__ == '__main__':
 
     ### Start APScheduler.BackgroundScheduler
     sched = BackgroundScheduler(daemon=True)
-    sched.add_job(time_lapse, 'interval', kwargs=kwargs, seconds=0.5)
+    sched.add_job(time_lapse, 'interval', kwargs=kwargs, seconds=3)
     sched.start()
 
     try:
