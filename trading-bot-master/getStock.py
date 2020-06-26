@@ -3,8 +3,8 @@ import yfinance as yf
 yf.pdr_override()
 
 start_date = '2019-01-01'
-end_date = '2020-06-20'
-date = '_2020_06_19.csv'
+end_date = '2020-06-27'
+date = '_2020_06_26.csv'
 
 path = './stockdata/'
 
