@@ -216,11 +216,13 @@ def time_lapse(**kwargs):
     window_size = kwargs['window_size']
     debug = kwargs['debug']
 
+    # TODO 거래 진행하면, DB에 넣도록 구현
     if t < data_length - 1:
         profit, next_state = trade_stock(agent, data, window_size, state, debug)
         state = next_state
 
         t += 1
+    
     else:
         print("Cannot Trade Anymore")
 
