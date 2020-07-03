@@ -42,8 +42,19 @@ def get_stock_data(stock_file):
     """Reads stock data from csv file
     """
     df = pd.read_csv(stock_file)
-    return list(df['Close']), list(df['Volume'])
+    df['Date'] = pd.to_datetime(df['Date'], format="%Y-%m")
+    return list(df['Close']), list(df['Volume']), list(df['Date'])
 
+def get_economy_data(economy_file):
+    print('get_economy_data')
+
+    df = pd.read_csv(economy_file)
+
+    df['Date'] = df['Date'].astype(str)
+    df['Date'] = df['Date'].str.replace(". ", "-", regex=False)
+    df['Date'] = pd.to_datetime(df['Date'], format="%Y-%m")
+    df = df.set_index('Date')
+    return df
 
 def switch_k_backend_device():
     """ Switches `keras` backend from GPU to CPU if required.

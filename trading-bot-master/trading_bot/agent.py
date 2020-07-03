@@ -33,7 +33,7 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size*2  	# normalized previous days, present asset, present price
+        self.state_size = state_size*2 + 7*3 	# colse_data 10, volumn_data 10, economy_leading_data 21
         self.action_size = 2           		# [sit, buy, sell]
         self.buy_model_name = 'buy_' + model_name
         self.sell_model_name = 'sell_' + model_name
@@ -71,12 +71,6 @@ class Agent:
             print('strategy : ', self.strategy)
             self.n_iter = 1
             self.reset_every = reset_every
-
-            # target network
-            self.target_buy_model = clone_model(self.buy_model)
-            self.target_buy_model.set_weights(self.buy_model.get_weights())
-            self.target_sell_model = clone_model(self.sell_model)
-            self.target_sell_model.set_weights(self.sell_model.get_weights())
 
     def _model(self):
         print('create model')
@@ -156,6 +150,9 @@ class Agent:
 
         if self.strategy == "ddqn":
             for state, action, reward, next_state, done in buy_mini_batch:
+
+                self.target_buy_model = self.buy_model
+
                 if done:
                     target = reward
                 else:

@@ -17,7 +17,7 @@ from keras.models import load_model, clone_model
 
 import time
 
-def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=10, last_checkpoint=0):
+def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32, window_size=10, last_checkpoint=0):
     print('train model')
     total_profit = 0
     data_length = len(data[0]) - 1
@@ -25,7 +25,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
     agent.asset = 1e7
     agent.inventory = []
     avg_loss = []
-    state = get_state(data[0], data[1], 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], economy_data, 0, window_size + 1)
 
     buy_hold = 0
     buy_act = 0
@@ -36,14 +36,14 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
         sell_reward = 0
         buy_reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], t+1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], economy_data, t+1, window_size + 1)
 
         # select an action
         if (data[0][t] <= agent.asset):
             buy_t = t
             buy_state = state
             buy_action = agent.buy_act(buy_state)
-            buy_next_state = get_state(data[0], data[1], t + 1, window_size + 1)
+            buy_next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
             buy_done = (t == data_length - 1)
 
             if buy_action == 1:
@@ -59,7 +59,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
         else:
             sell_state = state
             sell_action = agent.sell_act(sell_state)
-            sell_next_state = get_state(data[0], data[1], t + 1, window_size + 1)
+            sell_next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
             sell_done = (t == data_length - 1)
 
             if sell_action == 1:
@@ -143,7 +143,7 @@ def train_model(agent, episode, data, ep_count=100, batch_size=32, window_size=1
     return (episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss))), False
 
 
-def evaluate_model(agent, data, window_size, debug):
+def evaluate_model(agent, data, economy_data, window_size, debug):
     total_profit = 0
     data_length = len(data[0]) - 1
 
@@ -151,7 +151,7 @@ def evaluate_model(agent, data, window_size, debug):
     agent.asset = 1e7
     agent.inventory = []
     
-    state = get_state(data[0], data[1], 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], economy_data, 0, window_size + 1)
 
     buy_hold = 0
     buy_act = 0
@@ -161,7 +161,7 @@ def evaluate_model(agent, data, window_size, debug):
     for t in range(data_length):        
         reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], t + 1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
 
         # BUY
         if agent.asset >= data[0][t]:
