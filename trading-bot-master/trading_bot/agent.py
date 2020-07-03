@@ -154,6 +154,21 @@ class Agent:
                 buy_X_train.append(state[0])
                 buy_y_train.append(q_values[0])
 
+        if self.strategy == "ddqn":
+            for state, action, reward, next_state, done in buy_mini_batch:
+                if done:
+                    target = reward
+                else:
+                    if (action == 1):
+                        target = reward + self.gamma * np.amax(self.sell_model.predict(np.amax(self.sell_model.predict(next_state)[0]))[0])
+                    else:
+                        target = reward + self.gamma * np.amax(self.buy_model.predict(np.amax(self.buy_model.predict(next_state)[0]))[0])
+                q_values = self.buy_model.predict(state)
+                q_values[0][action] = target
+
+                buy_X_train.append(state[0])
+                buy_y_train.append(q_values[0])
+
         # update q-function parameters based on huber loss gradient
         buy_loss = self.buy_model.fit(
             np.array(buy_X_train), np.array(buy_y_train),
@@ -184,6 +199,23 @@ class Agent:
                 # estimate q-values based on current state
                 q_values = self.sell_model.predict(state)
                 # update the target for current action based on discounted reward
+                q_values[0][action] = target
+
+                sell_X_train.append(state[0])
+                sell_y_train.append(q_values[0])
+        # DDQN
+        if self.strategy == "ddqn":
+            for state, action, reward, next_state, done in sell_mini_batch:
+                if done:
+                    target = reward
+                else:
+                    if (action == 1):
+                        target = reward + self.gamma * np.amax(
+                            self.buy_model.predict(np.amax(self.buy_model.predict(next_state)[0]))[0])
+                    else:
+                        target = reward + self.gamma * np.amax(
+                            self.sell_model.predict(np.amax(self.sell_model.predict(next_state)[0]))[0])
+                q_values = self.sell_model.predict(state)
                 q_values[0][action] = target
 
                 sell_X_train.append(state[0])
