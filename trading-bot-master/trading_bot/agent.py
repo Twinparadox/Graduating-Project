@@ -29,7 +29,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="dqn", reset_every=1000, pretrained=False, model_name=None):
+    def __init__(self, state_size, strategy="dqn", reset_n_iter=500, pretrained=False, model_name=None):
         self.strategy = strategy
 
         # agent config
@@ -67,10 +67,13 @@ class Agent:
             self.sell_model = self._model()
 
         # strategy config
-        if self.strategy in ["t-dqn", "double-dqn", "dqn"]:
+        if self.strategy in ["t-dqn", "ddqn", "dqn"]:
             print('strategy : ', self.strategy)
             self.n_iter = 1
-            self.reset_every = reset_every
+            self.reset_n_iter = reset_n_iter
+
+            self.target_buy_model = self.buy_model
+            self.target_sell_model = self.sell_model
 
     def _model(self):
         print('create model')
@@ -122,7 +125,7 @@ class Agent:
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size):
-
+        '''buy 모델'''
         buy_mini_batch = random.sample(self.buy_memory, batch_size)
 
         buy_X_train, buy_y_train = [], []
@@ -135,9 +138,10 @@ class Agent:
                 # 샘플링 된 데이터가 에피소드 진행 중의 데이터일 경우
                 # 행동에 대한 보상 + 다음 상태에서 얻을 수 있을거라 예측되는 최대보상 * 할인율
                 else:
-                    # approximate deep q-learning equation
+                    # buy
                     if (action == 1):
                         target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
+                    # hold
                     else:
                         target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
                 # estimate q-values based on current state
@@ -149,17 +153,22 @@ class Agent:
                 buy_y_train.append(q_values[0])
 
         if self.strategy == "ddqn":
-            for state, action, reward, next_state, done in buy_mini_batch:
-
+            if self.n_iter % self.reset_n_iter == 0:
                 self.target_buy_model = self.buy_model
+                self.target_sell_model = self.sell_model
 
+            for state, action, reward, next_state, done in buy_mini_batch:
                 if done:
                     target = reward
                 else:
+                    # buy
                     if (action == 1):
-                        target = reward + self.gamma * np.amax(self.sell_model.predict(np.amax(self.sell_model.predict(next_state)[0]))[0])
+                        t = self.sell_model.predict(next_state)[0]
+                        target = reward + self.gamma * self.target_sell_model.predict(next_state)[0][np.argmax(t)]
+                    # hold
                     else:
-                        target = reward + self.gamma * np.amax(self.buy_model.predict(np.amax(self.buy_model.predict(next_state)[0]))[0])
+                        t = self.buy_model.predict(next_state)[0]
+                        target = reward + self.gamma * self.target_buy_model.predict(next_state)[0][np.argmax(t)]
                 q_values = self.buy_model.predict(state)
                 q_values[0][action] = target
 
@@ -174,7 +183,7 @@ class Agent:
 
         if self.buy_epsilon > self.epsilon_min:
             self.buy_epsilon *= self.epsilon_decay
-
+        '''sell 모델'''
         sell_mini_batch = random.sample(self.sell_memory, batch_size)
 
         sell_X_train, sell_y_train = [], []
@@ -188,9 +197,11 @@ class Agent:
                 # 샘플링 된 데이터가 에피소드 진행 중의 데이터일 경우
                 # 행동에 대한 보상 + 다음 상태에서 얻을 수 있을거라 예측되는 최대보상 * 할인율
                 else:
+                    # sell
                     if (action == 1):
                         # approximate deep q-learning equation
                         target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
+                    # hold
                     else:
                         target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
                 # estimate q-values based on current state
@@ -202,16 +213,22 @@ class Agent:
                 sell_y_train.append(q_values[0])
         # DDQN
         if self.strategy == "ddqn":
+            if self.n_iter % self.reset_n_iter == 0:
+                self.target_sell_model = self.sell_model
+                self.target_buy_model = self.buy_model
+
             for state, action, reward, next_state, done in sell_mini_batch:
                 if done:
                     target = reward
                 else:
+                    # sell
                     if (action == 1):
-                        target = reward + self.gamma * np.amax(
-                            self.buy_model.predict(np.amax(self.buy_model.predict(next_state)[0]))[0])
+                        t = self.buy_model.predict(next_state)[0]
+                        target = reward + self.gamma * self.target_buy_model.predict(next_state)[0][np.argmax(t)]
+                    # hold
                     else:
-                        target = reward + self.gamma * np.amax(
-                            self.sell_model.predict(np.amax(self.sell_model.predict(next_state)[0]))[0])
+                        t = self.sell_model.predict(next_state)[0]
+                        target = reward + self.gamma * self.target_sell_model.predict(next_state)[0][np.argmax(t)]
                 q_values = self.sell_model.predict(state)
                 q_values[0][action] = target
 
@@ -230,6 +247,7 @@ class Agent:
 
         loss = (buy_loss[0] + sell_loss[0])/2
 
+        self.n_iter += 1
         return loss
 
 
