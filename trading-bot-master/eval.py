@@ -31,16 +31,16 @@ def main(eval_stock, window_size, model_name, debug):
     Please see https://arxiv.org/abs/1312.5602 for more details.
 
     Args: [python eval.py --help]
-    """
+    """    
     data = get_stock_data(eval_stock)
-    initial_offset = data[1] - data[0]
+    initial_offset = data[0][1] - data[0][0]
 
     # Single Model Evaluation
     if model_name is not None:
         agent = Agent(window_size, pretrained=True, model_name=model_name)
         profit, _ = evaluate_model(agent, data, window_size, debug)
         show_eval_result(model_name, profit, initial_offset)
-
+        
     # Multiple Model Evaluation
     else:
         for model in os.listdir("models"):
