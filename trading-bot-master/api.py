@@ -8,6 +8,7 @@ from trading_bot.agent import Agent
 from trading_bot.methods import evaluate_model
 from trading_bot.utils import (
     get_stock_data,
+    get_date,
     format_currency,
     format_position,
     show_eval_result,
@@ -15,6 +16,11 @@ from trading_bot.utils import (
 )
 from trading_bot.ops import (
     get_state
+)
+from db_utils.utils import (
+    connect_server,
+    disconnect_server,
+    insert_data
 )
 
 from flask import Flask
@@ -95,7 +101,8 @@ num_cannotsell = 0
 num_hold = 0
 
 ### TODO : 시각화 진행 및 로그 출력
-def trade_stock(agent, data, window_size, state, debug):
+### TODO : 서버 활용할 경우 서버 접속 필요
+def trade_stock(agent, data, date_list, window_size, state, debug):
     global total_profit
     global num_buy, num_sell, num_cannotbuy, num_cannotsell, num_hold
 
@@ -112,7 +119,7 @@ def trade_stock(agent, data, window_size, state, debug):
     # BUY
     if action == 1:
         if agent.asset < data[t]:
-            history.append({"index":t, "price":data[t], "action":"Cannot BUY"})
+            history.append({"index":t, "date":date_list[t], "price":data[t], "volume":0, "action":"Cannot BUY"})
             if debug:
                 logging.debug("Cannot Buy, Hold at: {} | Day_Index: {}".format(
                     format_currency(data[t]), t))
@@ -128,7 +135,7 @@ def trade_stock(agent, data, window_size, state, debug):
             agent.asset -= nStocks * data[t]
             agent.inventory.append([data[t], nStocks])
 
-            history.append({"index":t, "price":data[t], "nStocks":nStocks, "action":"BUY"})
+            history.append({"index":t, "date":date_list[t], "price":data[t], "nStocks":nStocks, "volume":nStocks, "action":"BUY"})
             if debug:
                 logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[t]), nStocks, t))
 
@@ -154,7 +161,7 @@ def trade_stock(agent, data, window_size, state, debug):
 
             total_profit += delta
 
-            history.append({"index":t, "price":data[t], "nStocks":nStocks, "action":"SELL"})
+            history.append({"index":t, "date":date_list[t], "price":data[t], "nStocks":nStocks, "volume":nStocks, "action":"SELL"})
             if debug:
                 logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
                     format_currency(data[t]), nStocks, format_position(delta), format_position(total_profit), reward, t))
@@ -162,7 +169,7 @@ def trade_stock(agent, data, window_size, state, debug):
             num_sell += 1
 
         else:
-            history.append({"index":t, "price":data[t], "action":"Cannot SELL"})
+            history.append({"index":t, "date":date_list[t], "price":data[t], "volume":0, "action":"Cannot SELL"})
             if debug:
                 logging.debug("Cannot Sell, Hold at: {} | Day_Index: {}".format(
                     format_currency(data[t]), t))
@@ -186,7 +193,7 @@ def trade_stock(agent, data, window_size, state, debug):
         else:
             reward = 0
 
-        history.append({"index":t, "price":data[t], "action":"HOLD"})
+        history.append({"index":t, "date":date_list[t], "price":data[t], "volume":0, "action":"HOLD"})
         if debug:
             logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(
                 format_currency(data[t]), reward, t))
@@ -197,6 +204,8 @@ def trade_stock(agent, data, window_size, state, debug):
     agent.memory.append((state, action, reward, next_state, done))
 
     state = next_state
+
+    insert_data("SS", history[-1])
 
     return profit, next_state
 
@@ -213,12 +222,13 @@ def time_lapse(**kwargs):
 
     agent = kwargs['agent']
     data = kwargs['data']
+    date_list = kwargs['date_list']
     window_size = kwargs['window_size']
     debug = kwargs['debug']
 
     # TODO 거래 진행하면, DB에 넣도록 구현
     if t < data_length - 1:
-        profit, next_state = trade_stock(agent, data, window_size, state, debug)
+        profit, next_state = trade_stock(agent, data, date_list, window_size, state, debug)
         state = next_state
 
         t += 1
@@ -239,6 +249,7 @@ if __name__ == '__main__':
     ### Initialize Trader
     window_size = 10
     data = get_stock_data(eval_stock)
+    date_list = get_date(eval_stock)
     initial_offset = data[1] - data[0]
     data_length = len(data) - 1
     agent = Agent(window_size, pretrained=True, model_name=model_name)
@@ -248,7 +259,9 @@ if __name__ == '__main__':
     state = get_state(data, 0, window_size + 1)
 
     ### TODO: args가 과연 필요한가에 대한 파악 필요
-    kwargs = {"agent":agent, "data":data, "window_size":window_size, "debug":debug}
+    kwargs = {"agent":agent, "data":data, "date_list":date_list, "window_size":window_size, "debug":debug}
+
+    connect_server()
 
     ### Start APScheduler.BackgroundScheduler
     sched = BackgroundScheduler(daemon=True)
@@ -260,3 +273,4 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print("Aborted")
+        disconnect_server()

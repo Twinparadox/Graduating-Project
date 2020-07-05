@@ -44,6 +44,13 @@ def get_stock_data(stock_file):
     df = pd.read_csv(stock_file)
     return list(df['Close'])
 
+def get_date(stock_file):
+    print('get_date()')
+
+    df = pd.read_csv(stock_file)
+    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+    return list(df['Date'])
+
 
 def switch_k_backend_device():
     """ Switches `keras` backend from GPU to CPU if required.
