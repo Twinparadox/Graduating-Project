@@ -3,13 +3,8 @@ import yfinance as yf
 yf.pdr_override()
 
 start_date = '2019-01-01'
-<<<<<<< HEAD
-end_date = '2020-07-04'
-date = '_2020_07_03.csv'
-=======
-end_date = '2020-06-20'
-date = '_2020_06_19.csv'
->>>>>>> origin/Dual-Model
+end_date = '2020-07-11'
+date = '_2020_07_10.csv'
 
 path = './stockdata/'
 
