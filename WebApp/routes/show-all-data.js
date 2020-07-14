@@ -10,6 +10,7 @@ router.get('/', function(req, res, next) {
             for(var i = 0;i < rows.length;i++) {
                 console.log(rows[i]);
             }
+            res.render('show-all-data', {results:rows});
         } else {
             console.log("query error : "+error);
         }

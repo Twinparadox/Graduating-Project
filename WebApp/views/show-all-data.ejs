@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <title> Show-All-Data </title>
+</head>
+<body>
+    <table>
+        <% for(let data of results) { %>
+            <tr>
+                <td><%= data.trading_logs_id %></td>
+                <td><%= data.trading_logs_contents %></td>
+            </tr>
+        <% } %>
+    </table>
+
+</body>
+</html>
