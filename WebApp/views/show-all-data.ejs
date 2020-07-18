@@ -7,11 +7,13 @@
     <table>
         <% for(let data of results) { %>
             <tr>
-                <td><%= data.trading_logs_id %></td>
-                <td><%= data.trading_logs_contents %></td>
+                <td><%= data.trading_id %></td>
+                <td><%= data.trading_date %></td>
+                <td><%= data.trading_corp %></td>
+                <td><%= data.trading_price %></td>
+                <td><%= data.trading_volume %></td>
+                <td><%= data.trading_action %></td>
             </tr>
         <% } %>
     </table>
-
 </body>
-</html>
