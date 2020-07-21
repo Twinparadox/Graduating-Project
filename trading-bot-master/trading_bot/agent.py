@@ -35,7 +35,7 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size  # normalized previous days
+        self.state_size = state_size*2 + 7*3 	# colse_data 10, volumn_data 10, economy_leading_data 21
         self.action_size = 3  # [sit, buy, sell]
         self.model_name = model_name
         self.asset = 1e7  # 현재 보유 현금
@@ -49,7 +49,7 @@ class Agent:
         self.gamma = 0.95  # affinity for long term reward
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.999
+        self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
