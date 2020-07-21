@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var mysql_dbc = require('../config/database')();
+var mysql_dbc = require('../config/db_con')();
 var connection = mysql_dbc.init();
 
 router.get('/', function(req, res, next) {

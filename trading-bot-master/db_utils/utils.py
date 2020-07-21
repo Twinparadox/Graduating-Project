@@ -61,7 +61,7 @@ def connect_server():
     # MySQL Connection 연결
     conn = pymysql.connect(host=pv_info.host_name, port=pv_info.port_num,
                            user=pv_info.user_name, password=pv_info.user_password,
-                           db='trading_db', charset='utf8', autocommit=True)
+                           db=pv_info.database, charset='utf8', autocommit=True)
 
     # Connection 으로부터 Cursor 생성
     cursor = conn.cursor()
