@@ -68,7 +68,7 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
         val_result, history, buy_count, sell_count, hold_count = evaluate_model(agent, val_data, economy_data, window_size, debug)
         show_train_result(train_result, val_result, initial_offset, [buy_count, sell_count, hold_count])
 
-
+# TODO DQN을 좀 더 정교하게 설계할 필요가 있음
 if __name__ == "__main__":
     args = docopt(__doc__)
 

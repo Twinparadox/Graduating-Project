@@ -16,7 +16,7 @@ def sigmoid(x):
         print("Error in sigmoid: " + err)
 
 
-def get_state(close_data, volume_data, date_data, economy_data, t, n_days):
+def get_state(close_data, volume_data, date_data, economy_data, agent, t, n_days):
     """Returns an n-day state representation ending at time t
     """
     d = t - n_days + 1

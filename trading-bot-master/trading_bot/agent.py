@@ -35,12 +35,13 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size*2 + 7*3 	# colse_data 10, volumn_data 10, economy_leading_data 21
+        self.state_size = 41 	# asset, nStocks, colse_data 10, volumn_data 10, economy_leading_data 21
         self.action_size = 3  # [sit, buy, sell]
         self.model_name = model_name
         self.asset = 1e7  # 현재 보유 현금
         self.origin = 1e7  # 최초 보유 현금
         self.inventory = []  # 보유 중인 주식
+        self.ownStocks = 0
         self.memory = deque(maxlen=10000)  # 히스토리
         self.first_iter = True
 
@@ -63,7 +64,7 @@ class Agent:
             self.model = self._model()
 
         # strategy config
-        if self.strategy in ["t-dqn", "double-dqn", "dqn"]:
+        if self.strategy in ["double-dqn", "dqn"]:
             print('strategy : ', self.strategy)
             self.n_iter = 1
             self.reset_every = reset_every
@@ -79,9 +80,8 @@ class Agent:
         model = Sequential()
         model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
         model.add(Dense(units=256, activation="relu"))
-        model.add(Dense(units=256, activation="relu"))
         model.add(Dense(units=128, activation="relu"))
-        model.add(Dense(units=self.action_size))
+        model.add(Dense(units=self.action_size, activation="softmax"))
 
         model.compile(loss=self.loss, optimizer=self.optimizer)
         return model
@@ -126,28 +126,6 @@ class Agent:
                 else:
                     # approximate deep q-learning equation
                     target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-                # estimate q-values based on current state
-                q_values = self.model.predict(state)
-                # update the target for current action based on discounted reward
-                q_values[0][action] = target
-
-                X_train.append(state[0])
-                y_train.append(q_values[0])
-
-        # n_iter 값 변화 없어서 모델 업데이트 되지 않음
-        # DQN with fixed targets
-        elif self.strategy == "t-dqn":
-            if self.n_iter % self.reset_every == 0:
-                # reset target model weights
-                self.target_model.set_weights(self.model.get_weights())
-
-            for state, action, reward, next_state, done in mini_batch:
-                if done:
-                    target = reward
-                else:
-                    # approximate deep q-learning equation with fixed targets
-                    target = reward + self.gamma * np.amax(self.target_model.predict(next_state)[0])
-
                 # estimate q-values based on current state
                 q_values = self.model.predict(state)
                 # update the target for current action based on discounted reward
