@@ -29,7 +29,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="dqn", reset_n_iter=500, pretrained=False, model_name=None):
+    def __init__(self, state_size, strategy="dqn", reset_n_iter=1000, pretrained=False, model_name=None):
         self.strategy = strategy
 
         # agent config
@@ -125,6 +125,11 @@ class Agent:
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size):
+        # target model update
+        if self.n_iter % self.reset_n_iter == 0:
+            self.target_buy_model = self.buy_model
+            self.target_sell_model = self.sell_model
+
         '''buy 모델'''
         buy_mini_batch = random.sample(self.buy_memory, batch_size)
 
@@ -153,10 +158,6 @@ class Agent:
                 buy_y_train.append(q_values[0])
 
         if self.strategy == "ddqn":
-            if self.n_iter % self.reset_n_iter == 0:
-                self.target_buy_model = self.buy_model
-                self.target_sell_model = self.sell_model
-
             for state, action, reward, next_state, done in buy_mini_batch:
                 if done:
                     target = reward
@@ -213,10 +214,6 @@ class Agent:
                 sell_y_train.append(q_values[0])
         # DDQN
         if self.strategy == "ddqn":
-            if self.n_iter % self.reset_n_iter == 0:
-                self.target_sell_model = self.sell_model
-                self.target_buy_model = self.buy_model
-
             for state, action, reward, next_state, done in sell_mini_batch:
                 if done:
                     target = reward
