@@ -14,23 +14,40 @@ from .ops import (
 )
 
 import time
-
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32, window_size=10):
     print('train model')
     total_profit = 0
     data_length = len(data[0]) - 1
 
+    # Reward Debug 용
+    sum_reward = 0
+    fig = plt.figure()
+    axe = fig.add_subplot(111)
+    Y_max = -100
+    Y_min = 100
+    X, Y = [0], [0]
+    X_u, Y_u = [], []
+    X_d, Y_d = [], []
+    sp, = axe.plot([], [], label='same', ms=2.5, color='k', marker='o', ls='')
+    sp_u, = axe.plot([], [], label='up', ms=2.5, color='r', marker='o', ls='')
+    sp_d, = axe.plot([], [], label='down', ms=2.5, color='b', marker='o', ls='')
+    fig.show()
+
     agent.asset = 1e7
     agent.ownStocks = 0
     agent.inventory = []
     avg_loss = []
-    state = get_state(data[0], data[1], data[2], economy_data, [agent.asset, agent.ownStocks], 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], economy_data, data[3:],\
+                      [agent.asset, agent.ownStocks], 0, window_size + 1)
 
     for t in tqdm(range(data_length), total=data_length, leave=True, desc='Episode {}/{}'.format(episode, ep_count)):
         reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], data[2], economy_data, [agent.asset, agent.ownStocks],  t + 1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], economy_data, data[3:],\
+                               [agent.asset, agent.ownStocks],  t + 1, window_size + 1)
 
         # select an action
         action = agent.act(state)
@@ -52,7 +69,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 delta = data[0][t] * nStocks - bought_sum
                 agent.asset += data[0][t] * nStocks
                 agent.ownStocks = 0
-                reward = delta / bought_sum * 100 * 2
+                reward = delta / agent.origin
                 total_profit += delta
 
                 nStocks = agent.asset // data[0][t]
@@ -81,7 +98,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 bought_sum = np.array(stock_list).sum()
                 delta = data[0][t] * nStocks - bought_sum
                 total_profit += delta
-                reward = delta / bought_sum * 100 * 2
+                reward = delta / agent.origin
                 agent.asset += data[0][t] * nStocks
                 agent.ownStocks = 0
             else:
@@ -97,7 +114,12 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 stock_list.append(item[0] * item[1])
                 nStocks += item[1]
 
-            reward = 0
+            bought_sum = np.array(stock_list).sum()
+            delta = data[0][t] * nStocks - bought_sum
+
+            if bought_sum != 0:
+                reward = delta / agent.origin
+                reward /= 100
 
         # print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
         done = (t == data_length - 1)
@@ -111,8 +133,31 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
         state = next_state
         agent.n_iter += 1
 
+        sum_reward += reward
+        Y_min = min(Y_min, sum_reward)
+        Y_max = max(Y_max, sum_reward)
+
+        if reward > 0:
+            X_u.append(t)
+            Y_u.append(sum_reward)
+        elif reward < 0:
+            X_d.append(t)
+            Y_d.append(sum_reward)
+        else:
+            X.append(t)
+            Y.append(sum_reward)
+
+        sp.set_data(X,Y)
+        sp_d.set_data(X_d, Y_d)
+        sp_u.set_data(X_u, Y_u)
+        axe.set_xlim(0,data_length)
+        axe.set_ylim(Y_min,Y_max)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+
     if episode % 10 == 0:
         agent.save(episode)
+    plt.close()
 
     return (episode, ep_count, total_profit, np.mean(np.array(avg_loss)))
 
@@ -126,14 +171,16 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
     agent.inventory = []
     agent.ownStocks = 0
 
-    state = get_state(data[0], data[1], data[2], economy_data, [agent.asset, agent.ownStocks], 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], economy_data, data[3:],\
+                      [agent.asset, agent.ownStocks], 0, window_size + 1)
 
     buy_count, sell_count, hold_count = 0, 0, 0
 
     for t in range(data_length):
         reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], data[2], economy_data, [agent.asset, agent.ownStocks], t + 1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], economy_data, data[3:],\
+                               [agent.asset, agent.ownStocks], t + 1, window_size + 1)
 
         # select an action
         action = agent.act(state, is_eval=True)
@@ -154,7 +201,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
                 agent.asset += data[0][t] * nStocks
                 agent.ownStocks = 0
                 delta = data[0][t] * nStocks - bought_sum
-                reward = delta / bought_sum * 100 * 2
+                reward = delta / agent.origin
 
                 total_profit += delta
                 history.append((data[0][t] * nStocks, "SELL"))
@@ -200,7 +247,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
                 delta = data[0][t] * nStocks - bought_sum
                 agent.asset += data[0][t] * nStocks
                 agent.ownStocks = 0
-                reward = delta / bought_sum * 100 * 2
+                reward = delta / agent.origin
                 total_profit += delta
 
                 history.append((data[0][t] * nStocks, "SELL"))
@@ -228,7 +275,10 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
             bought_sum = np.array(stock_list).sum()
             delta = data[0][t] * nStocks - bought_sum
 
-            reward = 0
+            if bought_sum != 0:
+                reward = delta / agent.origin
+                reward /= 100
+
             history.append((data[0][t], "HOLD"))
             if debug:
                 logging.debug("Hold at: {} | Reward: {} | Day_Index: {}".format(

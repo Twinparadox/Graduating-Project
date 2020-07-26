@@ -35,7 +35,8 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        self.state_size = 41 	# asset, nStocks, colse_data 10, volumn_data 10, economy_leading_data 21
+        # colse_data 10, volumn_data 10, economy_leading_data 21, stochastic 3
+        self.state_size = 44 	# state size
         self.action_size = 3  # [sit, buy, sell]
         self.model_name = model_name
         self.asset = 1e7  # 현재 보유 현금
@@ -47,10 +48,10 @@ class Agent:
 
         # model config
         self.model_name = model_name
-        self.gamma = 0.95  # affinity for long term reward
+        self.gamma = 0.9  # discount factor
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
@@ -81,7 +82,7 @@ class Agent:
         model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
         model.add(Dense(units=256, activation="relu"))
         model.add(Dense(units=128, activation="relu"))
-        model.add(Dense(units=self.action_size, activation="softmax"))
+        model.add(Dense(units=self.action_size, activation="linear"))
 
         model.compile(loss=self.loss, optimizer=self.optimizer)
         return model

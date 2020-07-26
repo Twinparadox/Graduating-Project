@@ -39,6 +39,8 @@ from trading_bot.utils import (
     switch_k_backend_device
 )
 
+import matplotlib.pyplot as plt
+
 def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
          strategy="t-dqn", model_name="model_debug", pretrained=False,
          debug=False):
@@ -61,12 +63,33 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
     initial_offset = val_data[0][1] - val_data[0][0]
     last_checkpoint = 0
 
+    # epsiode별 validation profit plot
+    fig_ep = plt.figure()
+    axe_ep = fig_ep.add_subplot(111)
+    X_ep, Y_ep = [0], [0]
+    Y_min = -1e7
+    Y_max = 1e7
+    sp_ep, = axe_ep.plot([], [], label='same', ms=2.5, color='k', marker='o', ls='')
+    fig_ep.show()
+
+
     for episode in range(1, ep_count + 1):
         print('train episode : ', episode)
         train_result = train_model(agent, episode, train_data, economy_data, ep_count=ep_count,
                                    batch_size=batch_size, window_size=window_size)
         val_result, history, buy_count, sell_count, hold_count = evaluate_model(agent, val_data, economy_data, window_size, debug)
         show_train_result(train_result, val_result, initial_offset, [buy_count, sell_count, hold_count])
+
+        X_ep.append(episode)
+        Y_ep.append(val_result)
+        Y_max = max(Y_max, val_result)
+        Y_min = min(Y_min, val_result)
+
+        sp_ep.set_data(X_ep,Y_ep)
+        axe_ep.set_xlim(0,ep_count + 1)
+        axe_ep.set_ylim(Y_min, Y_max + 1)
+        fig_ep.canvas.draw()
+
 
 # TODO DQN을 좀 더 정교하게 설계할 필요가 있음
 if __name__ == "__main__":

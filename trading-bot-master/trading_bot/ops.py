@@ -15,8 +15,7 @@ def sigmoid(x):
     except Exception as err:
         print("Error in sigmoid: " + err)
 
-
-def get_state(close_data, volume_data, date_data, economy_data, agent, t, n_days):
+def get_state(close_data, volume_data, date_data, economy_data, stochastic_data, agent, t, n_days):
     """Returns an n-day state representation ending at time t
     """
     d = t - n_days + 1
@@ -31,7 +30,8 @@ def get_state(close_data, volume_data, date_data, economy_data, agent, t, n_days
 
     economy_block = economy_data[prev_previtme:prevtime]
 
-    res = []
+    #print(len(stochastic_data[0]))
+    res = [stochastic_data[0][t], stochastic_data[1][t], stochastic_data[2][t]]
     for i in range(n_days - 1):
         res.append(sigmoid(close_block[i + 1] - close_block[i]))
     for i in range(n_days - 1):
