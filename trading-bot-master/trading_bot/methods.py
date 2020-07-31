@@ -17,13 +17,14 @@ from keras.models import load_model, clone_model
 
 import time
 
-def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32, window_size=10, last_checkpoint=0):
+def train_model(agent, episode, data, economy_data, ep_count=100, window_size=10, last_checkpoint=0):
     print('train model')
     total_profit = 0
     data_length = len(data[0]) - 1
 
     agent.asset = 1e7
     agent.inventory = []
+    avg_loss = []
     state = get_state(data[0], data[1], data[2], economy_data, 0, window_size + 1)
 
     buy_hold = 0
@@ -54,7 +55,8 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 agent.inventory.append([data[0][t], nStocks])
             else:
                 buy_hold += 1
-                agent.train_buy_model(buy_state, buy_action, buy_reward, buy_next_state, buy_done)
+                avg_loss.append(agent.train_buy_model(buy_state, buy_action, buy_reward, buy_next_state, buy_done))
+
                 pass
         else:
             sell_state = state
@@ -84,8 +86,8 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 buy_reward = sell_reward
                 total_profit += delta
 
-                agent.train_buy_model(buy_state, buy_action, buy_reward, buy_next_state, buy_done)
-                agent.train_sell_model(sell_state, sell_action, sell_reward, sell_next_state, sell_done)
+                avg_loss.append(agent.train_buy_model(buy_state, buy_action, buy_reward, buy_next_state, buy_done))
+                avg_loss.append(agent.train_sell_model(sell_state, sell_action, sell_reward, sell_next_state, sell_done))
             else:
                 sell_hold += 1
                 stock_list = []
@@ -97,7 +99,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 bought_sum = np.array(stock_list).sum()
                 delta = data[0][t] * nStocks - bought_sum
 
-                agent.train_sell_model(sell_state, sell_action, sell_reward, sell_next_state, sell_done)
+                avg_loss.append(agent.train_sell_model(sell_state, sell_action, sell_reward, sell_next_state, sell_done))
 
         # 현재 이익(total_profit)이 원금의 10% 이상 손실본 경우
         if total_profit <= -0.1 * agent.origin:
@@ -113,14 +115,18 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 agent.buy_critic_model = agent.critic_load()
                 agent.sell_critic_model = agent.critic_load()
             else: # 가장 마지막에 저장된 에피소드
-                agent.buy_actor_model = load_model("models/{}_{}".format(agent.buy_actor_model_name, last_checkpoint))
-                agent.sell_actor_model = load_model("models/{}_{}".format(agent.sell_actor_model_name, last_checkpoint))
-                agent.buy_critic_model = load_model("models/{}_{}".format(agent.buy_critic_model_name, last_checkpoint))
-                agent.sell_critic_model = load_model("models/{}_{}".format(agent.sell_critic_mode_name, last_checkpoint))
+                agent.buy_actor_model = load_model("models/{}_{}".format(agent.buy_actor_model_name, last_checkpoint),
+                                                   custom_objects=agent.custom_actor_loss)
+                agent.sell_actor_model = load_model("models/{}_{}".format(agent.sell_actor_model_name, last_checkpoint),
+                                                    custom_objects=agent.custom_actor_loss)
+                agent.buy_critic_model = load_model("models/{}_{}".format(agent.buy_critic_model_name, last_checkpoint),
+                                                    custom_objects=agent.custom_critic_loss)
+                agent.sell_critic_model = load_model("models/{}_{}".format(agent.sell_critic_model_name, last_checkpoint),
+                                                     custom_objects=agent.custom_critic_loss)
 
             print("Early Stoping - {} episode, last_checkpoint {}".format(episode, last_checkpoint))
-            print(episode, ep_count, total_profit, agent.asset)
-            return (episode, ep_count, total_profit, agent.asset), True
+            print(episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss)))
+            return (episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss))), True
 
 
         state = next_state
@@ -136,7 +142,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
 
     agent.save(episode)
     print("Buy act : ", buy_act, " Buy Hold : ", buy_hold, " sell Act : ", sell_act, " Sell Hold : ", sell_hold)
-    return (episode, ep_count, total_profit, agent.asset), False
+    return (episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss))), False
 
 
 def evaluate_model(agent, data, economy_data, window_size, debug):

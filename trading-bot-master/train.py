@@ -10,8 +10,6 @@ Usage:
 Options:
   --window-size=<window-size>       Size of the n-day window stock data representation
                                     used as the feature vector. [default: 10]
-  --batch-size=<batch-size>         Number of samples to train on in one mini-batch
-                                    during training. [default: 32]
   --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 1000]
   --model-name=<model-name>         Name of the pretrained model to use. [default: model_debug]
   --pretrained                      Specifies whether to continue training a previously
@@ -35,7 +33,7 @@ from trading_bot.utils import (
     switch_k_backend_device
 )
 
-def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
+def main(train_stock, val_stock, economy, window_size, ep_count,
          model_name="model_debug", pretrained=False,
          debug=False):
     """ Trains the stock trading bot using Deep Q-Learning.
@@ -60,7 +58,7 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
     for episode in range(1, ep_count + 1):
         print('train episode : ', episode)
         train_result, is_earlystopping = train_model(agent, episode, train_data, economy_data, ep_count=ep_count,
-                                                     batch_size=batch_size, window_size=window_size, last_checkpoint=last_checkpoint)
+                                                     window_size=window_size, last_checkpoint=last_checkpoint)
         val_result, _ = evaluate_model(agent, val_data, economy_data, window_size, debug)
         show_train_result(train_result, val_result, initial_offset)
 
@@ -75,7 +73,6 @@ if __name__ == "__main__":
     val_stock = args["<val-stock>"]
     economy_data = args["<economy>"]
     window_size = int(args["--window-size"])
-    batch_size = int(args["--batch-size"])
     ep_count = int(args["--episode-count"])
     model_name = args["--model-name"]
     pretrained = args["--pretrained"]
@@ -85,7 +82,7 @@ if __name__ == "__main__":
     switch_k_backend_device()
 
     try:
-        main(train_stock, val_stock, economy_data, window_size, batch_size,
+        main(train_stock, val_stock, economy_data, window_size,
              ep_count, model_name=model_name,
              pretrained=pretrained, debug=debug)
     except KeyboardInterrupt:

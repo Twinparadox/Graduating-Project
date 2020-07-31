@@ -27,7 +27,6 @@ def show_train_result(result, val_position, initial_offset):
         logging.info('Episode {}/{} - Train Position: {}  Val Position: {} asset:{} Train Loss: {:.4f})'
                      .format(result[0], result[1], format_position(result[2]), format_position(val_position), format_position(result[3]), result[4]))
 
-
 def show_eval_result(model_name, profit, initial_offset):
     """ Displays eval results
     """
