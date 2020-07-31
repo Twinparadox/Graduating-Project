@@ -11,74 +11,64 @@ from keras.models import load_model, clone_model
 from keras.layers import Dense, LSTM, Dropout
 from keras.optimizers import Adam
 
-import time
-
-def huber_loss(y_true, y_pred, clip_delta=1.0):
-    """Huber loss - Custom Loss Function for Q Learning
-
-    Links: 	https://en.wikipedia.org/wiki/Huber_loss
-            https://jaromiru.com/2017/05/27/on-using-huber-loss-in-deep-q-learning/
-    """
-    error = y_true - y_pred
-    cond = K.abs(error) <= clip_delta
-    squared_loss = 0.5 * K.square(error)
-    quadratic_loss = 0.5 * K.square(clip_delta) + clip_delta * (K.abs(error) - clip_delta)
-    return K.mean(tf.where(cond, squared_loss, quadratic_loss))
-
 
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="dqn", reset_n_iter=1000, pretrained=False, model_name=None):
-        self.strategy = strategy
+    def __init__(self, state_size, pretrained=False, model_name=None):
 
         # agent config
         self.state_size = state_size*2 + 7*3 	# colse_data 10, volumn_data 10, economy_leading_data 21
-        self.action_size = 2           		# [sit, buy, sell]
-        self.buy_model_name = 'buy_' + model_name
-        self.sell_model_name = 'sell_' + model_name
+        self.action_size = 2
+        self.buy_actor_model_name = 'buy_actor_' + model_name
+        self.buy_critic_model_name = 'buy_critic_' + model_name
+        self.sell_actor_model_name = 'sell_actor_' + model_name
+        self.sell_critic_model_name = 'sell_critic_' + model_name
         self.asset = 1e7                    # 현재 보유 현금
         self.origin = 1e7                   # 최초 보유 현금
         self.inventory = []                 # 보유 중인 주식
-        self.buy_memory = deque(maxlen=10000)   # 히스토리
-        self.sell_memory = deque(maxlen=10000)
         self.first_iter = True
 
         # model config
-        self.buy_model_name = 'buy_' + model_name
-        self.sell_model_name = 'sell_' + model_name
         self.gamma = 0.95 # affinity for long term reward
-        self.buy_epsilon = 1.0
-        self.sell_epsilon = 1.0
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.learning_rate = 0.001
-        self.loss = huber_loss
-        self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
-        self.optimizer = Adam(lr=self.learning_rate)
+        self.actor_lr = 0.001
+        self.critic_lr = 0.005
 
-        if pretrained and self.buy_model_name and self.sell_model_name is not None:
+        self.buy_actor_loss = None
+        self.buy_critic_loss = None
+        self.sell_actor_loss = None
+        self.sell_critic_loss = None
+
+        if pretrained and self.buy_actor_model_name and self.sell_actor_model_name and self.buy_critic_model_name and\
+                self.sell_critic_model_name is not None:
             print('load model')
-            self.buy_model = self.buy_load()
-            self.sell_model = self.sell_load()
+            self.buy_actor_model = self.buy_actor_load()
+            self.sell_actor_model = self.sell_actor_load()
+            self.buy_critic_model = self.buy_critic_load()
+            self.sell_critic_model = self.sell_critic_load()
         else:
             print('create model')
-            self.buy_model = self._model()
-            self.sell_model = self._model()
+            self.buy_actor_model = self.actor_load()
+            self.sell_actor_model = self.actor_load()
+            self.buy_critic_model = self.critic_load()
+            self.sell_critic_model = self.critic_load()
 
-        # strategy config
-        if self.strategy in ["t-dqn", "ddqn", "dqn"]:
-            print('strategy : ', self.strategy)
-            self.n_iter = 1
-            self.reset_n_iter = reset_n_iter
+        self.buy_actor_updater = self.buy_actor_optimizer()
+        self.buy_critic_updater = self.buy_critic_optimizer()
+        self.sell_actor_updater = self.sell_actor_optimizer()
+        self.sell_critic_updater = self.sell_critic_optimizer()
 
-            self.target_buy_model = self.buy_model
-            self.target_sell_model = self.sell_model
+    def actor_load(self):
+        model = Sequential()
+        model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
+        model.add(Dense(units=256, activation="relu"))
+        model.add(Dense(units=256, activation="relu"))
+        model.add(Dense(units=128, activation="relu"))
+        model.add(Dense(units=self.action_size, activation='softmax'))
 
-    def _model(self):
-        print('create model')
-        """Creates the model
-        """
+        return model
+
+    def critic_load(self):
         model = Sequential()
         model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
         model.add(Dense(units=256, activation="relu"))
@@ -86,176 +76,121 @@ class Agent:
         model.add(Dense(units=128, activation="relu"))
         model.add(Dense(units=self.action_size))
 
-        model.compile(loss=self.loss, optimizer=self.optimizer)
         return model
 
-    def buy_remember(self, state, action, reward, next_state, done):
+    def buy_act(self, state):
+        action_probs = self.buy_actor_model.predict(state).flatten()
+        return np.random.choice(self.action_size, 1, p=action_probs)[0]
 
-        self.buy_memory.append((state, action, reward, next_state, done))
+    def sell_act(self, state):
+        action_probs = self.sell_actor_model.predict(state).flatten()
+        return np.random.choice(self.action_size, 1, p=action_probs)[0]
 
-    def sell_remember(self, state, action, reward, next_state, done):
+    def buy_actor_optimizer(self):
+        action = K.placeholder(shape=[None, self.action_size])
+        advantage = K.placeholder(shape=[None, ])
 
-        self.sell_memory.append((state, action, reward, next_state, done))
+        action_prob = K.sum(action * self.buy_actor_model.output, axis=1)
+        cross_entropy = K.log(action_prob) * advantage
+        loss = -K.sum(cross_entropy)
 
+        optimizer = Adam(lr=self.actor_lr)
+        updates = optimizer.get_updates(self.buy_actor_model.trainable_weights, [], loss)
+        train = K.function([self.buy_actor_model.input, action, advantage], [],
+                           updates=updates)
 
-    def buy_act(self, state, is_eval=False):
-        # buy action
-        # take random action in order to diversify experience at the beginning
-        if not is_eval and random.random() <= self.buy_epsilon:
-            return random.randrange(self.action_size)
+        self.buy_actor_loss = loss
+        return train
 
-        if self.first_iter:
-            self.first_iter = False
-            return 1 # make a definite buy on the first iter
+    def sell_actor_optimizer(self):
+        action = K.placeholder(shape=[None, self.action_size])
+        advantage = K.placeholder(shape=[None, ])
 
-        action_probs = self.buy_model.predict(state)
-        return np.argmax(action_probs[0])
+        action_prob = K.sum(action * self.sell_actor_model.output, axis=1)
+        cross_entropy = K.log(action_prob) * advantage
+        loss = -K.sum(cross_entropy)
+        optimizer = Adam(lr=self.actor_lr)
+        updates = optimizer.get_updates(self.sell_actor_model.trainable_weights, [], loss)
+        train = K.function([self.sell_actor_model.input, action, advantage], [],
+                           updates=updates)
 
-    def sell_act(self, state, is_eval=False):
-        # Sell Action
-        # take random action in order to diversify experience at the beginning
-        if not is_eval and random.random() <= self.sell_epsilon:
-            return random.randrange(self.action_size)
+        self.sell_actor_loss = loss
+        return train
 
-        if self.first_iter:
-            self.first_iter = False
-            return 1 # make a definite buy on the first iter
+    def buy_critic_optimizer(self):
+        target = K.placeholder(shape=[None, ])
 
-        action_probs = self.sell_model.predict(state)
-        return np.argmax(action_probs[0])
+        loss = K.mean(K.square(target - self.buy_critic_model.output))
+        optimizer = Adam(lr=self.critic_lr)
+        updates = optimizer.get_updates(self.buy_critic_model.trainable_weights, [], loss)
+        train = K.function([self.buy_critic_model.input, target], [], updates=updates)
 
-    def train_experience_replay(self, batch_size):
-        # target model update
-        if self.n_iter % self.reset_n_iter == 0:
-            self.target_buy_model = self.buy_model
-            self.target_sell_model = self.sell_model
+        self.buy_critic_loss = loss
+        return train
 
-        '''buy 모델'''
-        buy_mini_batch = random.sample(self.buy_memory, batch_size)
+    def sell_critic_optimizer(self):
+        target = K.placeholder(shape=[None, ])
 
-        buy_X_train, buy_y_train = [], []
-        # DQN
-        if self.strategy == "dqn":
-            for state, action, reward, next_state, done in buy_mini_batch:
-                # 샘플링 된 데이터가 에피소드의 마지막 데이터일 경우 보상을 그대로 저장
-                if done:
-                    target = reward
-                # 샘플링 된 데이터가 에피소드 진행 중의 데이터일 경우
-                # 행동에 대한 보상 + 다음 상태에서 얻을 수 있을거라 예측되는 최대보상 * 할인율
-                else:
-                    # buy
-                    if (action == 1):
-                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
-                    # hold
-                    else:
-                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
-                # estimate q-values based on current state
-                q_values = self.buy_model.predict(state)
-                # update the target for current action based on discounted reward
-                q_values[0][action] = target
+        loss = K.mean(K.square(target - self.sell_critic_model.output))
+        optimizer = Adam(lr=self.critic_lr)
+        updates = optimizer.get_updates(self.sell_critic_model.trainable_weights, [], loss)
+        train = K.function([self.sell_critic_model.input, target], [], updates=updates)
 
-                buy_X_train.append(state[0])
-                buy_y_train.append(q_values[0])
+        self.sell_critic_loss = loss
+        return train
 
-        if self.strategy == "ddqn":
-            for state, action, reward, next_state, done in buy_mini_batch:
-                if done:
-                    target = reward
-                else:
-                    # buy
-                    if (action == 1):
-                        t = self.sell_model.predict(next_state)[0]
-                        target = reward + self.gamma * self.target_sell_model.predict(next_state)[0][np.argmax(t)]
-                    # hold
-                    else:
-                        t = self.buy_model.predict(next_state)[0]
-                        target = reward + self.gamma * self.target_buy_model.predict(next_state)[0][np.argmax(t)]
-                q_values = self.buy_model.predict(state)
-                q_values[0][action] = target
+    def train_buy_model(self, state, action, reward, next_state, done):
+        value = self.buy_critic_model.predict(state)[0]
+        next_value = self.buy_critic_model.predict(next_state)[0]
 
-                buy_X_train.append(state[0])
-                buy_y_train.append(q_values[0])
+        act = np.zeros([1, self.action_size])
+        act[0][action] = 1
 
-        # update q-function parameters based on huber loss gradient
-        buy_loss = self.buy_model.fit(
-            np.array(buy_X_train), np.array(buy_y_train),
-            epochs=1, verbose=0
-        ).history["loss"]
+        if done:
+            advantage = value - reward
+            target = [reward]
+        else:
+            advantage = (reward + self.gamma * next_value) - value
+            target = reward + self.gamma * next_value
 
-        if self.buy_epsilon > self.epsilon_min:
-            self.buy_epsilon *= self.epsilon_decay
-        '''sell 모델'''
-        sell_mini_batch = random.sample(self.sell_memory, batch_size)
+        self.buy_actor_updater([state, act, advantage])
+        self.buy_critic_updater([state, target])
 
-        sell_X_train, sell_y_train = [], []
-
-        # DQN
-        if self.strategy == "dqn":
-            for state, action, reward, next_state, done in sell_mini_batch:
-                # 샘플링 된 데이터가 에피소드의 마지막 데이터일 경우 보상을 그대로 저장
-                if done:
-                    target = reward
-                # 샘플링 된 데이터가 에피소드 진행 중의 데이터일 경우
-                # 행동에 대한 보상 + 다음 상태에서 얻을 수 있을거라 예측되는 최대보상 * 할인율
-                else:
-                    # sell
-                    if (action == 1):
-                        # approximate deep q-learning equation
-                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
-                    # hold
-                    else:
-                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
-                # estimate q-values based on current state
-                q_values = self.sell_model.predict(state)
-                # update the target for current action based on discounted reward
-                q_values[0][action] = target
-
-                sell_X_train.append(state[0])
-                sell_y_train.append(q_values[0])
-        # DDQN
-        if self.strategy == "ddqn":
-            for state, action, reward, next_state, done in sell_mini_batch:
-                if done:
-                    target = reward
-                else:
-                    # sell
-                    if (action == 1):
-                        t = self.buy_model.predict(next_state)[0]
-                        target = reward + self.gamma * self.target_buy_model.predict(next_state)[0][np.argmax(t)]
-                    # hold
-                    else:
-                        t = self.sell_model.predict(next_state)[0]
-                        target = reward + self.gamma * self.target_sell_model.predict(next_state)[0][np.argmax(t)]
-                q_values = self.sell_model.predict(state)
-                q_values[0][action] = target
-
-                sell_X_train.append(state[0])
-                sell_y_train.append(q_values[0])
-
-        # TODO : ADD DDQN, Dueling DQN, TDQN
-        # update q-function parameters based on huber loss gradient
-        sell_loss = self.sell_model.fit(
-            np.array(sell_X_train), np.array(sell_y_train),
-            epochs=1, verbose=0
-        ).history["loss"]
-
-        if self.sell_epsilon > self.epsilon_min:
-            self.sell_epsilon *= self.epsilon_decay
-
-        loss = (buy_loss[0] + sell_loss[0])/2
-
-        self.n_iter += 1
+        loss = (self.buy_critic_loss + self.buy_actor_loss)/2
         return loss
+
+    def train_sell_model(self, state, action, reward, next_state, done):
+        value = self.sell_critic_model.predict(state)[0]
+        next_value = self.sell_critic_model.predict(next_state)[0]
+
+        act = np.zeros([1, self.action_size])
+        act[0][action] = 1
+
+        if done:
+            advantage = reward - value
+            target = [reward]
+        else:
+            advantage = (reward + self.gamma * next_value) - value
+            target = reward + self.gamma * next_value
+
+        self.sell_actor_updater([state, act, advantage])
+        self.sell_critic_updater([state, target])
 
 
     def save(self, episode):
-        self.buy_model.save("models/{}_{}".format(self.buy_model_name, episode))
-        self.sell_model.save("models/{}_{}".format(self.sell_model_name, episode))
+        self.buy_actor_model.save("models/{}_{}".format(self.buy_actor_model_name, episode))
+        self.sell_actor_model.save("models/{}_{}".format(self.sell_actor_model_name, episode))
+        self.buy_critic_model.save("models/{}_{}".format(self.buy_critic_model_name, episode))
+        self.sell_critic_model.save("models/{}_{}".format(self.sell_critic_model_name, episode))
 
-    # buy 모델 불러오기
-    def buy_load(self):
-        return load_model("models/" + self.buy_model_name, custom_objects=self.custom_objects)
+    def buy_actor_load(self):
+        return load_model("models/" + self.buy_actor_model_name)
 
-    # sell 모델 불러오기
-    def sell_load(self):
-        return load_model("models/" + self.sell_model_name, custom_objects=self.custom_objects)
+    def sell_actor_load(self):
+        return load_model("models/" + self.sell_actor_model_name)
+
+    def buy_critic_load(self):
+        return load_model("models/" + self.buy_critic_model_name)
+
+    def sell_critic_load(self):
+        return load_model("models/" + self.sell_critic_model_name)
