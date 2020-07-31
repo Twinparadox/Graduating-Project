@@ -2,16 +2,12 @@
 Script for training Stock Trading Bot.
 
 Usage:
-  train.py <train-stock> <val-stock> <economy> [--strategy=<strategy>]
+  train.py <train-stock> <val-stock> <economy>
     [--window-size=<window-size>] [--batch-size=<batch-size>]
     [--episode-count=<episode-count>] [--model-name=<model-name>]
     [--pretrained] [--debug]
 
 Options:
-  --strategy=<strategy>             Q-learning strategy to use for training the network. Options:
-                                      `dqn` i.e. Vanilla DQN,
-                                      `t-dqn` i.e. DQN with fixed target distribution,
-                                      `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
                                     used as the feature vector. [default: 10]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
@@ -40,7 +36,7 @@ from trading_bot.utils import (
 )
 
 def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
-         strategy="dqn", model_name="model_debug", pretrained=False,
+         model_name="model_debug", pretrained=False,
          debug=False):
     """ Trains the stock trading bot using Deep Q-Learning.
     Please see https://arxiv.org/abs/1312.5602 for more details.
@@ -48,7 +44,7 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
     Args: [python train.py --help]
     """
     print("initialize agent")
-    agent = Agent(window_size, strategy=strategy, pretrained=pretrained, model_name=model_name)
+    agent = Agent(window_size, pretrained=pretrained, model_name=model_name)
 
     print('get stock data')
     train_data = get_stock_data(train_stock)
@@ -78,7 +74,6 @@ if __name__ == "__main__":
     train_stock = args["<train-stock>"]
     val_stock = args["<val-stock>"]
     economy_data = args["<economy>"]
-    strategy = args["--strategy"]
     window_size = int(args["--window-size"])
     batch_size = int(args["--batch-size"])
     ep_count = int(args["--episode-count"])
@@ -91,7 +86,7 @@ if __name__ == "__main__":
 
     try:
         main(train_stock, val_stock, economy_data, window_size, batch_size,
-             ep_count, strategy=strategy, model_name=model_name,
+             ep_count, model_name=model_name,
              pretrained=pretrained, debug=debug)
     except KeyboardInterrupt:
         print("Aborted!")

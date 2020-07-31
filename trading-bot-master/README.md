@@ -50,7 +50,7 @@ pip install -r requirements.txt
 Now you can open up a terminal and start training the agent:
 
 ```bash
-python train.py data/SS.csv data/SS_2018.csv data/economy_leading_2005.csv --strategy dqn
+python train.py data/SS.csv data/SS_2018.csv data/economy_leading_2005.csv
 ```
 
 Once you're done training, run the evaluation script and let the agent make trading decisions:

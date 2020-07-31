@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/getStock.py" beforeDir="false" afterPath="$PROJECT_DIR$/getStock.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_10" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_10" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_20" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_20" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_30" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_30" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_40" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_40" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/model_debug_50" beforeDir="false" afterPath="$PROJECT_DIR$/models/model_debug_50" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trading_bot/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trading_bot/methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/trading_bot/methods.py" afterDir="false" />
-    </list>
+    <list default="true" id="8a4e4e98-61cf-4b96-94f7-783255ade822" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,7 +22,7 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$/Downloads/Graduating-Project-master" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -84,11 +74,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Desktop/세미나/조선과(영상처리)/object" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../세미나/조선과(영상처리)/object" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$USER_HOME$/Desktop/세미나/조선과(영상처리)/object/extract_contour.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../세미나/조선과(영상처리)/object/extract_contour.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
