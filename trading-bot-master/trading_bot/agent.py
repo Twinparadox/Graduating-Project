@@ -99,7 +99,6 @@ class Agent:
         train = K.function([self.buy_actor_model.input, action, advantage], [],
                            updates=updates)
 
-        self.buy_actor_loss = loss
         return train
 
     def sell_actor_optimizer(self):
@@ -114,7 +113,6 @@ class Agent:
         train = K.function([self.sell_actor_model.input, action, advantage], [],
                            updates=updates)
 
-        self.sell_actor_loss = loss
         return train
 
     def buy_critic_optimizer(self):
@@ -125,7 +123,6 @@ class Agent:
         updates = optimizer.get_updates(self.buy_critic_model.trainable_weights, [], loss)
         train = K.function([self.buy_critic_model.input, target], [], updates=updates)
 
-        self.buy_critic_loss = loss
         return train
 
     def sell_critic_optimizer(self):
@@ -136,7 +133,6 @@ class Agent:
         updates = optimizer.get_updates(self.sell_critic_model.trainable_weights, [], loss)
         train = K.function([self.sell_critic_model.input, target], [], updates=updates)
 
-        self.sell_critic_loss = loss
         return train
 
     def train_buy_model(self, state, action, reward, next_state, done):
@@ -156,8 +152,6 @@ class Agent:
         self.buy_actor_updater([state, act, advantage])
         self.buy_critic_updater([state, target])
 
-        loss = (self.buy_critic_loss + self.buy_actor_loss)/2
-        return loss
 
     def train_sell_model(self, state, action, reward, next_state, done):
         value = self.sell_critic_model.predict(state)[0]
