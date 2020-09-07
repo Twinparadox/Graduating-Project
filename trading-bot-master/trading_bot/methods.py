@@ -23,6 +23,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
     data_length = len(data[0]) - 1
 
     # Reward Debug 용
+    buy_count, sell_count, hold_count = 0, 0, 0
     sum_reward = 0
     fig = plt.figure()
     axe = fig.add_subplot(111)
@@ -56,7 +57,11 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
         if action == 1:
             # print("BUY")
             # 가용 가능한 자산이 없으면, 주식을 팔아서 거래 진행
+            # vs
+            # 그냥 홀드해버리기
+            '''
             if agent.asset < data[0][t]:
+                buy_count += 1
                 # print("SELL AND BUY")
                 stock_list = []
                 nStocks = 0
@@ -76,8 +81,22 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 agent.asset -= nStocks * data[0][t]
                 agent.ownStocks += nStocks
                 agent.inventory.append([data[0][t], nStocks])
+            '''
+            if agent.asset < data[0][t]:
+                hold_count += 1
+                print("CANNOT BUY AND HOLD")
+                stock_list = []
+                nStocks = 0
+                for item in agent.inventory:
+                    stock_list.append(item[0] * item[1])
+                    nStocks += item[1]
+
+                bought_sum = np.array(stock_list).sum()
+                delta = data[0][t] * nStocks - bought_sum
+                reward = 0
 
             else:
+                buy_count += 1
                 # print("BUY")
                 nStocks = agent.asset // data[0][t]
                 agent.asset -= nStocks * data[0][t]
@@ -87,6 +106,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
         # SELL
         elif action == 2:
             if len(agent.inventory) > 0:
+                sell_count += 1
                 # print("SELL")
                 stock_list = []
                 nStocks = 0
@@ -102,11 +122,13 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 agent.asset += data[0][t] * nStocks
                 agent.ownStocks = 0
             else:
-                # print("Cannot SELL")
+                hold_count += 1
+                # print("CANNOT SELL AND HOLD")
                 reward = 0
 
         # HOLD
         else:
+            hold_count += 1
             # print("HOLD")
             stock_list = []
             nStocks = 0
@@ -116,10 +138,11 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
 
             bought_sum = np.array(stock_list).sum()
             delta = data[0][t] * nStocks - bought_sum
+            reward = 0
 
-            if bought_sum != 0:
-                reward = delta / agent.origin
-                reward /= 100
+            #if bought_sum != 0:
+                #reward = delta / agent.origin
+                #reward /= 100
 
         # print('reward :', reward, 'delta :', delta, 'asset :', agent.asset)
         done = (t == data_length - 1)
@@ -152,8 +175,15 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
         sp_u.set_data(X_u, Y_u)
         axe.set_xlim(0,data_length)
         axe.set_ylim(Y_min,Y_max)
+        axe.set_title("R = {0:.2f}, R_Sum = {1:.2f}, Buy = {2}, Sell = {3}, Hold = {4}".
+                      format(reward, sum_reward, buy_count, sell_count, hold_count))
         fig.canvas.draw()
         fig.canvas.flush_events()
+
+        # sum_reward가 -0.2를 넘어가면, 순간적으로 손해가 큼
+        # 해당 에피소드는 종료하고, 새 에피소드 진행
+        #if sum_reward < -0.2:
+        #    break
 
     if episode % 10 == 0:
         agent.save(episode)
@@ -187,7 +217,11 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
 
         # BUY
         if action == 1:
-            buy_count += 1
+            # print("BUY")
+            # 가용 가능한 자산이 없으면, 주식을 팔아서 거래 진행
+            # vs
+            # 그냥 홀드해버리기
+            '''
             if agent.asset < data[0][t]:
                 # First SELL
                 stock_list = []
@@ -221,6 +255,24 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
                 if debug:
                     logging.debug("Buy, at: {} | Day_Index: {}".format(
                         format_currency(data[0][t]), t))
+            '''
+            if agent.asset < data[0][t]:
+                hold_count += 1
+                print("CANNOT BUY AND HOLD")
+                stock_list = []
+                nStocks = 0
+                for item in agent.inventory:
+                    stock_list.append(item[0] * item[1])
+                    nStocks += item[1]
+
+                bought_sum = np.array(stock_list).sum()
+                delta = data[0][t] * nStocks - bought_sum
+                reward = 0
+
+                if debug:
+                    logging.debug("Cannot Buy & Hold at: {} | Reward: {} | Day_Index: {}".format(
+                    format_currency(data[0][t]), reward, t))
+
             else:
                 nStocks = agent.asset // data[0][t]
                 agent.asset -= nStocks * data[0][t]
@@ -274,10 +326,11 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
 
             bought_sum = np.array(stock_list).sum()
             delta = data[0][t] * nStocks - bought_sum
+            reward = 0
 
-            if bought_sum != 0:
-                reward = delta / agent.origin
-                reward /= 100
+            # if bought_sum != 0:
+            #     reward = delta / agent.origin
+            #     reward /= 100
 
             history.append((data[0][t], "HOLD"))
             if debug:

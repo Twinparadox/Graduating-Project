@@ -48,10 +48,10 @@ class Agent:
 
         # model config
         self.model_name = model_name
-        self.gamma = 0.9  # discount factor
+        self.gamma = 0.1  # discount factor
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.999
+        self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
