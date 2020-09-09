@@ -21,6 +21,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
     print('train model')
     total_profit = 0
     data_length = len(data[0]) - 1
+    agent.reset_every = len(data[0])
 
     # Reward Debug 용
     buy_count, sell_count, hold_count = 0, 0, 0
@@ -84,7 +85,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
             '''
             if agent.asset < data[0][t]:
                 hold_count += 1
-                print("CANNOT BUY AND HOLD")
+                # print("CANNOT BUY AND HOLD")
                 stock_list = []
                 nStocks = 0
                 for item in agent.inventory:
@@ -258,7 +259,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
             '''
             if agent.asset < data[0][t]:
                 hold_count += 1
-                print("CANNOT BUY AND HOLD")
+                # print("CANNOT BUY AND HOLD")
                 stock_list = []
                 nStocks = 0
                 for item in agent.inventory:
@@ -274,6 +275,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
                     format_currency(data[0][t]), reward, t))
 
             else:
+                buy_count += 1
                 nStocks = agent.asset // data[0][t]
                 agent.asset -= nStocks * data[0][t]
                 agent.ownStocks += nStocks

@@ -12,7 +12,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 import time
-
+import datetime
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
     """Huber loss - Custom Loss Function for Q Learning
@@ -35,8 +35,8 @@ class Agent:
         self.strategy = strategy
 
         # agent config
-        # colse_data 10, volumn_data 10, economy_leading_data 21, stochastic 3
-        self.state_size = 44 	# state size
+        # colse_data 10, volumn_data 10, economy_leading_data 21, stochastic 3 + MA 2
+        self.state_size = state_size * 2 + 21 + 3 + 2 	# state size
         self.action_size = 3  # [sit, buy, sell]
         self.model_name = model_name
         self.asset = 1e7  # 현재 보유 현금
@@ -50,9 +50,9 @@ class Agent:
         self.model_name = model_name
         self.gamma = 0.1  # discount factor
         self.epsilon = 1.0
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.1
         self.epsilon_decay = 0.995
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
         self.optimizer = Adam(lr=self.learning_rate)
@@ -79,11 +79,12 @@ class Agent:
         """Creates the model
         """
         model = Sequential()
-        model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
-        model.add(Dense(units=256, activation="relu"))
-        model.add(Dense(units=128, activation="relu"))
+        model.add(Dense(units=64, activation="relu", input_dim=self.state_size))
+        model.add(Dense(units=32, activation="relu"))
+        model.add(Dense(units=16, activation="relu"))
         model.add(Dense(units=self.action_size, activation="linear"))
 
+        # Huber loss vs MSE
         model.compile(loss=self.loss, optimizer=self.optimizer)
         return model
 
@@ -175,7 +176,9 @@ class Agent:
         return loss
 
     def save(self, episode):
-        self.model.save("models/{}_{}".format(self.model_name, episode))
+        now = datetime.datetime.now()
+        now = now.strftime('%Y-%m-%d %H-%M-%S')
+        self.model.save("models/{}_{}_{}".format(self.model_name, episode, now))
 
     def load(self):
         return load_model("models/" + self.model_name, custom_objects=self.custom_objects)

@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime
+import time
 
 code_df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13', header=0)[0]
 # 종목코드가 6자리이기 때문에 6자리를 맞춰주기 위해 설정해줌
@@ -20,16 +21,18 @@ def get_url(item_name, code_df):
     print("요청 URL = {}".format(url))
     return url
 
-item_name = '삼성전자'
+item_name = 'NAVER'
 url = get_url(item_name, code_df)
 
 # 일자 데이터를 담을 df라는 DataFrame 정의
 df = pd.DataFrame()
 
 # 1페이지에서 20페이지의 데이터만 가져오기
-for page in range(1, 263):
+for page in range(1, 265):
     pg_url = '{url}&page={page}'.format(url=url, page=page)
     df = df.append(pd.read_html(pg_url, header=0)[0], ignore_index=True)
+    time.sleep(0.05)
+    print("PAGE = {0} Done".format(page))
 
 # df.dropna()를 이용해 결측값 있는 행 제거
 df = df.dropna()
@@ -53,7 +56,7 @@ df = df.sort_values(by=['date'], ascending=True)
 # 일자(n,m,t)에 따른 Stochastic(KDJ)의 값을 구하기 위한 함수
 # 스토캐스틱 20 이하에서 %K선이 %D선을 상향 돌파하면 골든크로스라고 하여 매수 관점으로 접근할 수 있고,
 # 스토캐스틱 80 이상에서 %K선이 %D선을 하향 돌파하면 데드크로스라고 하여 매도 관점
-def get_stochastic(df, n=5, m=5, t=3):
+def get_stochastic(df, n=5, m=3, t=3):
     # 입력받은 값이 dataframe이라는 것을 정의해줌
     df = pd.DataFrame(df)
 

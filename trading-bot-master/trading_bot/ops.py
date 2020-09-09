@@ -31,7 +31,8 @@ def get_state(close_data, volume_data, date_data, economy_data, stochastic_data,
     economy_block = economy_data[prev_previtme:prevtime]
 
     #print(len(stochastic_data[0]))
-    res = [stochastic_data[0][t], stochastic_data[1][t], stochastic_data[2][t]]
+    #kdj 3개 + MA 2개
+    res = [stochastic_data[0][t], stochastic_data[1][t], stochastic_data[2][t], stochastic_data[3][t], stochastic_data[4][t]]
     for i in range(n_days - 1):
         res.append(sigmoid(close_block[i + 1] - close_block[i]))
     for i in range(n_days - 1):

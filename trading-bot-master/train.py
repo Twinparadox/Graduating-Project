@@ -13,7 +13,7 @@ Options:
                                       `t-dqn` i.e. DQN with fixed target distribution,
                                       `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
-                                    used as the feature vector. [default: 10]
+                                    used as the feature vector. [default: 3]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
                                     during training. [default: 32]
   --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 100]
@@ -89,6 +89,7 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
         axe_ep.set_xlim(0,ep_count + 1)
         axe_ep.set_ylim(Y_min, Y_max + 1)
         fig_ep.canvas.draw()
+        fig_ep.savefig('EP_'+str(episode)+'.png', dpi=150)
 
 
 # TODO DQN을 좀 더 정교하게 설계할 필요가 있음

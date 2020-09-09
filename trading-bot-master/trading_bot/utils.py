@@ -44,7 +44,8 @@ def get_stock_data(stock_file):
     df = pd.read_csv(stock_file)
     df['date'] = pd.to_datetime(df['date'], format="%Y-%m")
     return list(df['close']), list(df['volume']), list(df['date']), \
-           list(df['kdj_k']), list(df['kdj_d']), list(df['kdj_j'])
+           list(df['kdj_k']), list(df['kdj_d']), list(df['kdj_j']), \
+           list(df['MA5']), list(df['MA10'])
 
 def get_economy_data(economy_file):
     print('get_economy_data')
