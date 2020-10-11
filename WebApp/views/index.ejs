@@ -10,6 +10,16 @@
     <link rel='stylesheet' href='https://uicdn.toast.com/tui.chart/latest/tui-chart.css'/>
     <script src="https://uicdn.toast.com/tui.chart/latest/tui-chart-all.min.js"></script>
 
+    <%# Billboard.js %>
+    <!-- Step 1) Load D3.js -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <!-- Step 2) Load billboard.js with style -->
+    <script src="$YOUR_PATH/billboard.js"></script>
+
+    <!-- Load with base style -->
+    <link rel="stylesheet" href="$YOUR_PATH/billboard.css">
+
     <%# Bootstrap UI %>
     <link rel="stylesheet" href="css/bootstrap.css">
     <script src="js/jquery-3.5.1.js" type="text/javascript"></script>
@@ -18,16 +28,23 @@
   </head>
   <body>
     <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-    <button type="button" class="btn btn-primary" id="btn_30">30 Days</button>
-    <button type="button" class="btn btn-primary" id="btn_60">60 Days</button>
-    <button type="button" class="btn btn-primary" id="btn_90">90 Days</button>
-    <div class="btn-group" role="group" aria-label="Basic example">
-      <button type="button" class="btn btn-secondary">Left</button>
-      <button type="button" class="btn btn-secondary">Middle</button>
-      <button type="button" class="btn btn-secondary">Right</button>
+    <div class="row">
+      <div class="col-8">
+        <button type="button" class="btn btn-primary" id="btn_30">30 Days</button>
+        <button type="button" class="btn btn-primary" id="btn_60">60 Days</button>
+        <button type="button" class="btn btn-primary" id="btn_90">90 Days</button>
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="button" class="btn btn-secondary">Left</button>
+          <button type="button" class="btn btn-secondary">Middle</button>
+          <button type="button" class="btn btn-secondary">Right</button>
+        </div>
+        <div id="chart-area"></div>
+        <div id="chart"></div>
+      </div>
+      <div class="col-4">
+
+      </div>
     </div>
-    <div id="chart-area"></div>
   </body>
 
   <script>
@@ -43,15 +60,13 @@
     };
     var options = {
         chart: {
-            width: 1160,
-            height: 540,
             title: '24-hr Average Temperature'
         },
         yAxis: {
-            title: 'Temperature (Celsius)',
+            title: '원',
         },
         xAxis: {
-            title: 'Month',
+            title: '일자',
             pointOnColumn: true,
             dateFormat: 'MMM',
             tickInterval: 'auto'
@@ -61,7 +76,7 @@
             zoomable: true
         },
         tooltip: {
-            suffix: '°C'
+            suffix: '원'
         }
     };
     var theme = {
@@ -83,12 +98,13 @@
             categories:data.trading_date,
             series: [
                 {
-                    name: data.trading_corp,
+                    name: data.corp,
                     data: data.trading_price
                 }
             ]
         }
         chart.setData(newData);
+        console.log(data.corp);
     }
 
     var stockName = "SS";
