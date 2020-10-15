@@ -4,7 +4,7 @@ var mysql_dbc = require('../config/db_con')();
 var connection = mysql_dbc.init();
 
 router.get('/', function(req, res, next) {
-    var sql = "SELECT * FROM trading_logs";
+    var sql = "SELECT * FROM table_logs";
     connection.query(sql, function(error, rows, fields) {
         if(!error) {
             for(var i = 0;i < rows.length;i++) {

@@ -171,8 +171,7 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
         else:
             history.append({"index":t, "date":date_list[t], "price":data[t], "volume":0, "action":"Cannot SELL"})
             if debug:
-                logging.debug("Cannot Sell, Hold at: {} | Day_Index: {}".format(
-                    format_currency(data[t]), t))
+                logging.debug("Cannot Sell, Hold at: {} | Day_Index: {}".format(format_currency(data[t]), t))
 
             num_cannotsell += 1
 
@@ -205,7 +204,7 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
 
     state = next_state
 
-    insert_data("SS", history[-1])
+    insert_data("SS", history[-1], delta, total_profit)
 
     return profit, next_state
 
@@ -226,7 +225,7 @@ def time_lapse(**kwargs):
     window_size = kwargs['window_size']
     debug = kwargs['debug']
 
-    # TODO 거래 진행하면, DB에 넣도록 구현
+    # 거래 진행하면, DB에 넣도록 구현
     if t < data_length - 1:
         profit, next_state = trade_stock(agent, data, date_list, window_size, state, debug)
         state = next_state

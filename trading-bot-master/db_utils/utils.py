@@ -27,7 +27,7 @@ action_dict = {
 
 # TODO History 형태로 넘어오면 SQL 쿼리로 변환
 # 데이터 삽입
-def insert_data(corp_code, data):
+def insert_data(corp_code, data, profit, prefix):
     global conn, cursor
 
     date = data['date'].date()
@@ -35,14 +35,16 @@ def insert_data(corp_code, data):
     price = int(data['price'])
     volume = int(data['volume'])
     action = int(action_dict[data['action']])
+    profit = int(profit)
+    prefix = float(prefix)
 
     print(type(price), type(volume), type(action))
 
     # SQL문 실행
     # Create a new record
-    sql = """INSERT INTO trading_logs (trading_date, trading_corp, trading_price, trading_volume, trading_action)
-             VALUES (%s, %s, %s, %s, %s) """
-    val = (date, corp, price, volume, action)
+    sql = """INSERT INTO table_logs (trading_date, trading_corp, trading_price, trading_volume, trading_action, trading_profit, trading_prefix)
+             VALUES (%s, %s, %s, %s, %s, %s, %s) """
+    val = (date, corp, price, volume, action, profit, prefix)
     cursor.execute(sql, val)
 
 # 데이터 조회
@@ -50,7 +52,10 @@ def insert_data(corp_code, data):
 def get_data(corp_code, times=30):
     global conn, cursor
 
-    sql = "SELECT * FROM "+"trading WHERE "+"LIMIT "+str(times)
+    sql = """SELECT table_logs.*, table_corp.corp_name FROM table_logs INNER JOIN table_corp """+ \
+          """ON table_logs.trading_corp=table_corp.corp_id AND table_corp.corp_name="""+"""삼성전자"""+ \
+          """LIMIT """+str(times)
+
     cursor.execute(sql)
     result = cursor.fetchall()
 
