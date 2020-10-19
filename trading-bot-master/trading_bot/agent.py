@@ -12,6 +12,7 @@ from keras.layers import Dense, LSTM, Dropout
 from keras.optimizers import Adam
 
 import time
+import itertools
 
 def huber_loss(y_true, y_pred, clip_delta=1.0):
     """Huber loss - Custom Loss Function for Q Learning
@@ -29,19 +30,19 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="dqn", reset_n_iter=1000, pretrained=False, model_name=None):
+    def __init__(self, state_size, strategy="dqn", reset_n_iter=100, pretrained=False, model_name=None):
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size*2 + 7*3 	# colse_data 10, volumn_data 10, economy_leading_data 21
+        self.state_size = state_size*8 	# open_data, hight_data, low_data, colse_data, volumn_data, 5_days_average, 10_days_average
         self.action_size = 2           		# [sit, buy, sell]
         self.buy_model_name = 'buy_' + model_name
         self.sell_model_name = 'sell_' + model_name
         self.asset = 1e7                    # 현재 보유 현금
         self.origin = 1e7                   # 최초 보유 현금
         self.inventory = []                 # 보유 중인 주식
-        self.buy_memory = deque(maxlen=10000)   # 히스토리
-        self.sell_memory = deque(maxlen=10000)
+        self.buy_memory = deque(maxlen=1000)   # 히스토리
+        self.sell_memory = deque(maxlen=1000)
         self.first_iter = True
 
         # model config
@@ -91,11 +92,11 @@ class Agent:
 
     def buy_remember(self, state, action, reward, next_state, done):
 
-        self.buy_memory.append((state, action, reward, next_state, done))
+        self.buy_memory.appendleft((state, action, reward, next_state, done))
 
     def sell_remember(self, state, action, reward, next_state, done):
 
-        self.sell_memory.append((state, action, reward, next_state, done))
+        self.sell_memory.appendleft((state, action, reward, next_state, done))
 
 
     def buy_act(self, state, is_eval=False):
@@ -104,7 +105,7 @@ class Agent:
         if not is_eval and random.random() <= self.buy_epsilon:
             return random.randrange(self.action_size)
 
-        if self.first_iter:
+        if not is_eval and self.first_iter:
             self.first_iter = False
             return 1 # make a definite buy on the first iter
 
@@ -117,21 +118,27 @@ class Agent:
         if not is_eval and random.random() <= self.sell_epsilon:
             return random.randrange(self.action_size)
 
-        if self.first_iter:
+        if not is_eval and self.first_iter:
             self.first_iter = False
             return 1 # make a definite buy on the first iter
 
         action_probs = self.sell_model.predict(state)
         return np.argmax(action_probs[0])
 
-    def train_experience_replay(self, batch_size):
+    def train_experience_replay(self, batch_size, reset):
+        '''
         # target model update
         if self.n_iter % self.reset_n_iter == 0:
             self.target_buy_model = self.buy_model
             self.target_sell_model = self.sell_model
+        '''
+        if reset:
+            self.target_buy_model = self.buy_model
+            self.target_sell_model = self.sell_model
 
         '''buy 모델'''
-        buy_mini_batch = random.sample(self.buy_memory, batch_size)
+        # buy_mini_batch = random.sample(self.buy_memory, batch_size)
+        buy_mini_batch = list(itertools.islice(self.buy_memory, None, batch_size))
 
         buy_X_train, buy_y_train = [], []
         # DQN
@@ -185,7 +192,8 @@ class Agent:
         if self.buy_epsilon > self.epsilon_min:
             self.buy_epsilon *= self.epsilon_decay
         '''sell 모델'''
-        sell_mini_batch = random.sample(self.sell_memory, batch_size)
+        # sell_mini_batch = random.sample(self.sell_memory, batch_size)
+        sell_mini_batch = list(itertools.islice(self.sell_memory, None, batch_size))
 
         sell_X_train, sell_y_train = [], []
 

@@ -16,6 +16,7 @@ from .ops import (
 from keras.models import load_model, clone_model
 
 import time
+import matplotlib.pyplot as plt
 
 def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32, window_size=10, last_checkpoint=0):
     print('train model')
@@ -25,25 +26,26 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
     agent.asset = 1e7
     agent.inventory = []
     avg_loss = []
-    state = get_state(data[0], data[1], data[2], economy_data, 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, 0, window_size + 1)
 
     buy_hold = 0
     buy_act = 0
     sell_hold = 0
     sell_act = 0
 
+    asset = []
     for t in tqdm(range(data_length), total=data_length, leave=True, desc='Episode {}/{}'.format(episode, ep_count)):
         sell_reward = 0
         buy_reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], data[2], economy_data, t+1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, t+1, window_size + 1)
 
         # select an action
         if (data[0][t] <= agent.asset):
             buy_t = t
             buy_state = state
             buy_action = agent.buy_act(buy_state)
-            buy_next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
+            buy_next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, t + 1, window_size + 1)
             buy_done = (t == data_length - 1)
 
             if buy_action == 1:
@@ -59,7 +61,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
         else:
             sell_state = state
             sell_action = agent.sell_act(sell_state)
-            sell_next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
+            sell_next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, t + 1, window_size + 1)
             sell_done = (t == data_length - 1)
 
             if sell_action == 1:
@@ -97,7 +99,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 delta = data[0][t] * nStocks - bought_sum
 
                 agent.sell_remember(sell_state, sell_action, sell_reward, sell_next_state, sell_done)
-
+        '''
         # 현재 이익(total_profit)이 원금의 10% 이상 손실본 경우
         if total_profit <= -0.1 * agent.origin:
             nStocks = 0
@@ -119,16 +121,18 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
             print("Early Stoping - {} episode, last_checkpoint {}".format(episode, last_checkpoint))
             print(episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss)))
             return (episode, ep_count, total_profit, agent.asset, np.mean(np.array(avg_loss))), True
-
-
-        # 행동을 32번 이상 했을때 학습 시작
-        if len(agent.buy_memory) > batch_size and len(agent.sell_memory) > batch_size:
-            #
-            loss = agent.train_experience_replay(batch_size)
-            avg_loss.append(loss)
+        '''
 
         state = next_state
         done = (t == data_length - 1)
+
+        # 행동을 32번 이상 했을때 학습 시작
+        if len(agent.buy_memory) > batch_size and len(agent.sell_memory) > batch_size:
+            if done:
+                loss = agent.train_experience_replay(batch_size, True)
+            else:
+                loss = agent.train_experience_replay(batch_size, False)
+            avg_loss.append(loss)
 
         if (done):
             nStocks = 0
@@ -137,6 +141,17 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
             agent.inventory = []
 
             agent.asset += data[0][t] * nStocks
+
+        num_Stocks = 0
+        for item in agent.inventory:
+            num_Stocks += item[1]
+
+        asset.append(agent.asset + data[0][t] * num_Stocks)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(asset)
+    plt.savefig('result' + str(episode))
 
     agent.save(episode)
     print("Buy act : ", buy_act, " Buy Hold : ", buy_hold, " sell Act : ", sell_act, " Sell Hold : ", sell_hold)
@@ -151,7 +166,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
     agent.asset = 1e7
     agent.inventory = []
     
-    state = get_state(data[0], data[1], data[2], economy_data, 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, 0, window_size + 1)
 
     buy_hold = 0
     buy_act = 0
@@ -161,7 +176,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
     for t in range(data_length):        
         reward = 0
         delta = 0
-        next_state = get_state(data[0], data[1], data[2], economy_data, t + 1, window_size + 1)
+        next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, t + 1, window_size + 1)
 
         # BUY
         if agent.asset >= data[0][t]:

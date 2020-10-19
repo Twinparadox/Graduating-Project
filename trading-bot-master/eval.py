@@ -2,7 +2,7 @@
 Script for evaluating Stock Trading Bot.
 
 Usage:
-  eval.py <eval-stock> [--window-size=<window-size>] [--model-name=<model-name>] [--debug]
+  eval.py <eval-stock> <economy> [--window-size=<window-size>] [--model-name=<model-name>] [--debug]
 
 Options:
   --window-size=<window-size>   Size of the n-day window stock data representation used as the feature vector. [default: 10]
@@ -26,7 +26,7 @@ from trading_bot.utils import (
 )
 
 
-def main(eval_stock, window_size, model_name, debug):
+def main(eval_stock, economy_data, window_size, model_name, debug):
     """ Evaluates the stock trading bot.
     Please see https://arxiv.org/abs/1312.5602 for more details.
 
@@ -38,7 +38,7 @@ def main(eval_stock, window_size, model_name, debug):
     # Single Model Evaluation
     if model_name is not None:
         agent = Agent(window_size, pretrained=True, model_name=model_name)
-        profit, _ = evaluate_model(agent, data, window_size, debug)
+        profit, _ = evaluate_model(agent, data, economy_data, window_size, debug)
         show_eval_result(model_name, profit, initial_offset)
         
     # Multiple Model Evaluation
@@ -46,7 +46,7 @@ def main(eval_stock, window_size, model_name, debug):
         for model in os.listdir("models"):
             if os.path.isfile(os.path.join("models", model)):
                 agent = Agent(window_size, pretrained=True, model_name=model)
-                profit = evaluate_model(agent, data, window_size, debug)
+                profit = evaluate_model(agent, data, economy_data, window_size, debug)
                 show_eval_result(model, profit, initial_offset)
                 del agent
 
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     eval_stock = args["<eval-stock>"]
+    economy_data = args["<economy>"]
     window_size = int(args["--window-size"])
     model_name = args["--model-name"]
     debug = args["--debug"]
@@ -63,6 +64,6 @@ if __name__ == "__main__":
     switch_k_backend_device()
 
     try:
-        main(eval_stock, window_size, model_name, debug)
+        main(eval_stock, economy_data, window_size, model_name, debug)
     except KeyboardInterrupt:
         print("Aborted")
