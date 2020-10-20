@@ -13,7 +13,7 @@ Options:
                                       `t-dqn` i.e. DQN with fixed target distribution,
                                       `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
-                                    used as the feature vector. [default: 10]
+                                    used as the feature vector. [default: 5]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
                                     during training. [default: 32]
   --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 1000]
@@ -58,7 +58,7 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
     val_data = get_stock_data(val_stock)
 
     # 첫 째날과 둘 째 날의 종가의 차
-    initial_offset = val_data[0][1] - val_data[0][0]
+    initial_offset = val_data[3][1] - val_data[3][0]
     last_checkpoint = 0
 
     for episode in range(1, ep_count + 1):
