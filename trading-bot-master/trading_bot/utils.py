@@ -56,6 +56,13 @@ def get_economy_data(economy_file):
     df = df.set_index('Date')
     return df
 
+def get_date(stock_file):
+    print('get_date()')
+
+    df = pd.read_csv(stock_file)
+    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+    return list(df['Date'])
+
 def switch_k_backend_device():
     """ Switches `keras` backend from GPU to CPU if required.
 
