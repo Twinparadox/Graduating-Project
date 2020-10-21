@@ -48,6 +48,9 @@ class Agent:
         # model config
         self.buy_model_name = 'buy_' + model_name
         self.sell_model_name = 'sell_' + model_name
+        self.hold_gamma = 0.5
+        self.buy_gamma = 0.95
+        self.sell_gamma = 0
         self.gamma = 0.95 # affinity for long term reward
         self.buy_epsilon = 1.0
         self.sell_epsilon = 1.0
@@ -152,10 +155,10 @@ class Agent:
                 else:
                     # buy
                     if (action == 1):
-                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
+                        target = reward + self.buy_gamma * np.amax(self.sell_model.predict(next_state)[0])
                     # hold
                     else:
-                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
+                        target = reward + self.hold_gamma * np.amax(self.buy_model.predict(next_state)[0])
                 # estimate q-values based on current state
                 q_values = self.buy_model.predict(state)
                 # update the target for current action based on discounted reward
@@ -209,10 +212,10 @@ class Agent:
                     # sell
                     if (action == 1):
                         # approximate deep q-learning equation
-                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
+                        target = reward + self.sell_gamma * np.amax(self.buy_model.predict(next_state)[0])
                     # hold
                     else:
-                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
+                        target = reward + self.hold_gamma * np.amax(self.sell_model.predict(next_state)[0])
                 # estimate q-values based on current state
                 q_values = self.sell_model.predict(state)
                 # update the target for current action based on discounted reward

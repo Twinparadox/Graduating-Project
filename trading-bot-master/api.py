@@ -204,7 +204,7 @@ if __name__ == '__main__':
     #args = docopt(__doc__)
     eval_stock = 'data/SS_2019.csv'
     economy = 'data/economy_leading_2005.csv'
-    model_name = 'model_debug_1'
+    model_name = 'model_debug_2'
     debug = '--debug'
 
     coloredlogs.install(level="DEBUG")

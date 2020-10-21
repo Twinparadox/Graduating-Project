@@ -56,7 +56,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 agent.inventory.append([data[3][t], nStocks])
             else:
                 buy_hold += 1
-                agent.buy_remember(buy_state, buy_action, buy_reward, buy_next_state, buy_done)
+                agent.buy_remember(buy_state, buy_action, 0, buy_next_state, buy_done)
                 pass
         else:
             sell_state = state
@@ -85,7 +85,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 buy_reward = sell_reward
                 total_profit += delta
 
-                agent.buy_remember(buy_state, buy_action, buy_reward, buy_next_state, buy_done)
+                agent.buy_remember(buy_state, buy_action, buy_reward, sell_state, buy_done)
                 agent.sell_remember(sell_state, sell_action, sell_reward, sell_next_state, sell_done)
             else:
                 sell_hold += 1
@@ -98,7 +98,7 @@ def train_model(agent, episode, data, economy_data, ep_count=100, batch_size=32,
                 bought_sum = np.array(stock_list).sum()
                 delta = data[3][t] * nStocks - bought_sum
 
-                agent.sell_remember(sell_state, sell_action, sell_reward, sell_next_state, sell_done)
+                agent.sell_remember(sell_state, sell_action, 0, sell_next_state, sell_done)
         '''
         # 현재 이익(total_profit)이 원금의 10% 이상 손실본 경우
         if total_profit <= -0.1 * agent.origin:

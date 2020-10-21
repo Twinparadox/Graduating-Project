@@ -13,7 +13,7 @@ Options:
                                       `t-dqn` i.e. DQN with fixed target distribution,
                                       `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
-                                    used as the feature vector. [default: 5]
+                                    used as the feature vector. [default: 10]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
                                     during training. [default: 32]
   --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 1000]

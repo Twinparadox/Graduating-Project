@@ -113,25 +113,25 @@ def get_state(open_data, high_data, low_data, close_data, volume_data, date_data
     '''
 
     res = []
-    for i in range(n_days - 1):
-        res.append((open_block[i + 1] - open_block[i])/open_block[i])
-    for i in range(n_days - 1):
-        res.append((high_block[i + 1] - high_block[i])/high_block[i])
-    for i in range(n_days - 1):
-        res.append((low_block[i + 1] - low_block[i])/low_block[i])
-    for i in range(n_days - 1):
-        res.append((close_block[i + 1] - close_block[i])/close_block[i])
-    for i in range(n_days - 1):
-        res.append((avg_5d_block[i + 1] - avg_5d_block[i])/avg_5d_block[i])
-    for i in range(n_days - 1):
-        res.append((avg_10d_block[i + 1] - avg_10d_block[i])/avg_10d_block[i])
-    for i in range(n_days - 1):
-        res.append((avg_20d_block[i + 1] - avg_20d_block[i])/avg_20d_block[i])
 
     for i in range(n_days - 1):
+        res.append(sigmoid((open_block[i + 1] - open_block[i])/open_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((high_block[i + 1] - high_block[i])/high_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((low_block[i + 1] - low_block[i])/low_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((close_block[i + 1] - close_block[i])/close_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((avg_5d_block[i + 1] - avg_5d_block[i])/avg_5d_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((avg_10d_block[i + 1] - avg_10d_block[i])/avg_10d_block[i]))
+    for i in range(n_days - 1):
+        res.append(sigmoid((avg_20d_block[i + 1] - avg_20d_block[i])/avg_20d_block[i]))
+    for i in range(n_days - 1):
         if volume_block[i] == 0:
-            res.append(0)
+            res.append(sigmoid(0))
         else:
-            res.append((volume_block[i+1] - volume_block[i])/volume_block[i])
+            res.append(sigmoid((volume_block[i+1] - volume_block[i])/volume_block[i]))
 
     return np.array([res])
