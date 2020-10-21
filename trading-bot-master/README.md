@@ -56,7 +56,7 @@ python train.py data/SS.csv data/SS_2018.csv data/economy_leading_2005.csv --str
 Once you're done training, run the evaluation script and let the agent make trading decisions:
 
 ```bash
-python eval.py data/SS_2019.csv data/economy_leading_2005.csv --model-name model_debug_50 --debug
+python eval.py data/SS_2019.csv data/economy_leading_2005.csv --model-name model_debug_1 --debug
 ```
 
 Now you are all set up!

@@ -167,7 +167,7 @@ def evaluate_model(agent, data, economy_data, window_size, debug):
     agent.inventory = []
     
     state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, 0, window_size + 1)
-
+    print(state)
     buy_hold = 0
     buy_act = 0
     sell_hold = 0

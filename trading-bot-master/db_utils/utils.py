@@ -18,11 +18,10 @@ cursor = None
 # rows = cursor.fetchall()
 
 action_dict = {
-    "HOLD":0,
-    "BUY":1,
-    "Cannot BUY":2,
-    "SELL":3,
-    "Cannot SELL":4
+    "Buy":0,
+    "Buy Hold":1,
+    "Sell":2,
+    "Sell Hold":3
 }
 
 # TODO History 형태로 넘어오면 SQL 쿼리로 변환
