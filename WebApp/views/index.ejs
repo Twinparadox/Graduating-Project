@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='css/style.css'/>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+
+    <%# TOAST CHART UI %>
+    <link rel='stylesheet' href='https://uicdn.toast.com/tui.chart/latest/tui-chart.css'/>
+    <script src="https://uicdn.toast.com/tui.chart/latest/tui-chart-all.min.js"></script>
+
+    <%# Bootstrap UI %>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <script src="js/jquery-3.5.1.js" type="text/javascript"></script>
+    <script src="js/bootstrap.js" type="text/javascript"></script>
+
+    <%# Custom CSS%>
+
+    <%# Custom Javascript %>
+    <script>
+    </script>
+
+    <%#Sidebar %>
+    <script>
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                map.setSize(getMapSize());
+                $('#sidebar').toggleClass('active');
+            });
+            $(function () {
+                $('[data-toggle="popover"]').popover()
+            })
+            $('.popover-dismiss').popover({
+                trigger: 'focus'
+            })
+            $('#exampleModal').modal('show');
+        });
+
+        $(document).on('click', 'a.patient', function () {
+            var key = $(this).attr('id');
+            selectedKey = $(this).attr('id');
+            updateMarkersCustom(map, key);
+
+            $('#sidebar').toggleClass('active');
+        });
+
+        $(document).on('click', 'div.sidebar-header', function () {
+            selectedKey = '';
+            updateMarkersCustom(map, null);
+        });
+    </script>
+
+</head>
+<body class="font-weight-bold">
+<hedaer class="navbar row bg-dark">
+    <h1 class="text-light font-weight-bold" style="margin-left:20px;">삼성전자</h1>
+    <div class="btn-group" role="group" aria-label="Basic example" style="margin-right:20px;">
+        <button type="button" class="btn btn-secondary" id="btn_30">30 Days</button>
+        <button type="button" class="btn btn-secondary" id="btn_60">60 Days</button>
+        <button type="button" class="btn btn-secondary" id="btn_90">90 Days</button>
+    </div>
+</hedaer>
+<div class="row mt-5" style="padding:20px; padding-top:0px;">
+    <div class="col-8">
+        <div id="chart-area"></div>
+        <div id="chart-stock"></div>
+    </div>
+    <div class="col-4 container">
+        <div style="width: 100%; height:100%;">
+            <table class="table table-hover" id="table-log">
+                <thead class="bg-white">
+                <tr class="fixedHeader">
+                    <th scope="col" class="fixedHeader">Action</th>
+                    <th scope="col" class="fixedHeader">Date</th>
+                    <th scope="col" class="fixedHeader">Price</th>
+                    <th scope="col" class="fixedHeader">Profit</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    function numberFormat(inputNumber) {
+        return inputNumber.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    var stockName = "SS";
+    var defaultDays = 30;
+
+    $(document).ready(function () {
+        $(window).resize(function () {
+            width = $('#chart-area').width();
+            height = $('#chart-area').height();
+            console.log(width);
+            chart_profit.resize({width: width, height: height});
+            chart_stock.resize({width: width, height: height});
+        });
+    });
+
+    const container_profit = document.getElementById('chart-area');
+    const container_stock = document.getElementById('chart-stock');
+    var chartData = {
+        categories: ['01/01/2016', '02/01/2016', '03/01/2016', '04/01/2016', '05/01/2016', '06/01/2016', '07/01/2016', '08/01/2016', '09/01/2016', '10/01/2016', '11/01/2016', '12/01/2016'],
+        series: [
+            {
+                name: 'SS',
+                data: [-3.5, -1.1, 4.0, 11.3, 17.5, 21.5, 24.9, 25.2, 20.4, 13.9, 6.6, -0.6]
+            }
+        ]
+    };
+    var options = {
+        chart: {
+            title: '일별 누적 수익'
+        },
+        yAxis: {
+            title: '원',
+        },
+        xAxis: {
+            title: '일자',
+            pointOnColumn: true,
+            dateFormat: 'MMM',
+            tickInterval: 'auto'
+        },
+        series: {
+            showDot: true,
+            zoomable: true
+        },
+        tooltip: {
+            suffix: '원'
+        },
+        legend: {
+            visible: false
+        },
+    };
+    var theme = {
+        series: {
+            colors: [
+                '#83b14e', '#458a3f', '#295ba0', '#2a4175', '#289399',
+                '#289399', '#617178', '#8a9a9a', '#516f7d', '#dddddd'
+            ]
+        }
+    };
+    // For apply theme
+    // tui.chart.registerTheme('myTheme', theme);
+    // options.theme = 'myTheme';
+    var chart_profit = tui.chart.lineChart(container_profit, chartData, options);
+    width = $('#chart-area').width();
+    height = $('#chart-area').height();
+    console.log(width);
+    chart_profit.resize({width: width, height: height});
+
+    options.chart.title = '일별 주가 추이';
+    let chart_stock = tui.chart.lineChart(container_stock, chartData, options);
+    width = $('#chart-stock').width();
+    height = $('#chart-stock').height();
+    chart_stock.resize({width: width, height: height});
+
+    $.ajax({
+        type: 'POST',
+        url: '/log',
+        data: {corp: stockName, days:defaultDays},
+        success: function (data) {
+            updateData(data);
+            updateTable(data);
+        },
+        error: function (e) {
+            alert(e.responseText);
+        }
+    });
+
+    const object_state = {
+        0: "HOLD",
+        1: "BUY",
+        2: "Cannot BUY",
+        3: "SELL",
+        4: "Cannot SELL"
+    };
+
+    function updateTable(data) {
+        const log_size = data.trading_action.length;
+        console.log(log_size);
+
+        // 테이블 클리어
+        $('#table-log > tbody').empty();
+
+        for (let idx = log_size-1; idx >= 0; idx--) {
+            // action에 따라서 행동 Mapping
+            let str_action = object_state[data.trading_action[idx]];
+            let str_date = data.trading_date[idx];
+            let str_price = numberFormat(data.trading_price[idx]);
+            let str_profit = numberFormat(data.trading_profit[idx]);
+            console.log(typeof (str_profit));
+
+            if(parseInt(str_profit) < 0)
+                color='bg-danger text-light';
+            else if(parseInt(str_profit) > 0)
+                color='bg-success text-light';
+            else
+                color='bg-default';
+
+            // Profit에 따라서 기호 추가
+            $('#table-log > tbody:last').append('<tr class="'+color+'"><td class="align-middle">' + str_action +
+                '</td><td class="align-middle">' + str_date +
+                '</td><td class="align-middle">' + str_price +
+                '</td><td class="align-middle">' + str_profit + '</td></tr>');
+        }
+    }
+
+    function updateData(data) {
+        // 누적 수익 업데이트
+        var newData = {
+            categories: data.trading_date,
+            series: [
+                {
+                    name: data.corp,
+                    data: data.trading_prefix
+                }
+            ]
+        }
+        chart_profit.setData(newData);
+
+        // 주가 업데이트
+        var newData = {
+            categories: data.trading_date,
+            series: [
+                {
+                    name: data.corp,
+                    data: data.trading_price
+                }
+            ]
+        }
+        chart_stock.setData(newData);
+    }
+
+    $('#btn_30, #btn_60, #btn_90').click(function () {
+        defaultDays = ($(this).attr("id").substr(4));
+        $.ajax({
+            type: 'POST',
+            url: '/log',
+            data: {corp: stockName, days:defaultDays},
+            success: function (data) {
+                updateData(data);
+                updateTable(data);
+            },
+            error: function (e) {
+                alert(e.responseText);
+            }
+        })
+    });
+
+    function refreshData()
+    {
+        $.ajax({
+            type: 'POST',
+            url: '/log',
+            data: {corp: stockName, days:defaultDays},
+            success: function (data) {
+                updateData(data);
+                updateTable(data);
+            },
+            error: function (e) {
+                alert(e.responseText);
+            }
+        });
+    }
+
+    // 3초마다 데이터 확인
+    //setInterval(refreshData,3000);
+</script>
+</html>
