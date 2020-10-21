@@ -122,15 +122,15 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
             agent.asset -= nStocks * data[3][t]
             agent.inventory.append([data[3][t], nStocks])
 
-            history.append({"index":t, "date":date_list[t], "price":data[t][3], "nStocks":nStocks, "volume":nStocks, "action":"Buy"})
+            history.append({"index":t, "date":date_list[t], "price":data[3][t], "nStocks":nStocks, "volume":nStocks, "action":"Buy"})
             if debug:
-                logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[t][3]), nStocks, t))
+                logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[3][t]), nStocks, t))
         else:
             num_buy_hold += 1
-            history.append({"index":t, "date":date_list[t], "price":data[t][3], "volume":0, "action":"Buy Hold"})
+            history.append({"index":t, "date":date_list[t], "price":data[3][t], "volume":0, "action":"Buy Hold"})
             if debug:
                 logging.debug("Buy hold, Hold at: {} | Day_Index: {}".format(
-                    format_currency(data[t][3]), t))
+                    format_currency(data[3][t]), t))
 
     else:
         action = agent.sell_act(state)
@@ -150,17 +150,17 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
             reward = delta / bought_sum
             total_profit += delta
 
-            history.append({"index": t, "date": date_list[t], "price": data[t][3], "nStocks": nStocks, "volume": nStocks,
+            history.append({"index": t, "date": date_list[t], "price": data[3][t], "nStocks": nStocks, "volume": nStocks,
                             "action": "Sell"})
             if debug:
                 logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-                    format_currency(data[t][3]), nStocks, format_position(delta), format_position(total_profit), reward,
+                    format_currency(data[3][t]), nStocks, format_position(delta), format_position(total_profit), reward,
                     t))
         else:
             num_sell_hold += 1
-            history.append({"index": t, "date": date_list[t], "price": data[t][3], "volume": 0, "action": "Sell Hold"})
+            history.append({"index": t, "date": date_list[t], "price": data[3][t], "volume": 0, "action": "Sell Hold"})
             if debug:
-                logging.debug("Sell Hold, Hold at: {} | Day_Index: {}".format(format_currency(data[t][3]), t))
+                logging.debug("Sell Hold, Hold at: {} | Day_Index: {}".format(format_currency(data[3][t]), t))
 
 
 
@@ -216,8 +216,9 @@ if __name__ == '__main__':
     data = get_stock_data(eval_stock)
     date_list = get_date(eval_stock)
     economy_data = get_economy_data(economy)
-    initial_offset = data[1][3] - data[0][3]
-    data_length = len(data) - 1
+    initial_offset = data[3][1] - data[3][0]
+    data_length = len(data[0]) - 1
+    print("data_length :", data_length)
     agent = Agent(window_size, pretrained=True, model_name=model_name)
     agent.asset = 1e7
     agent.inventory = []
