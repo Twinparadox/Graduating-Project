@@ -5,7 +5,7 @@ Usage:
   eval.py <eval-stock> <economy> [--window-size=<window-size>] [--model-name=<model-name>] [--debug]
 
 Options:
-  --window-size=<window-size>   Size of the n-day window stock data representation used as the feature vector. [default: 5]
+  --window-size=<window-size>   Size of the n-day window stock data representation used as the feature vector. [default: 1]
   --model-name=<model-name>     Name of the pretrained model to use (will eval all models in `models/` if unspecified).
   --debug                       Specifies whether to use verbose logs during eval operation.
 """
@@ -33,7 +33,7 @@ def main(eval_stock, economy_data, window_size, model_name, debug):
     Args: [python eval.py --help]
     """    
     data = get_stock_data(eval_stock)
-    initial_offset = data[0][1] - data[0][0]
+    initial_offset = data[1][1] - data[1][0]
 
     # Single Model Evaluation
     if model_name is not None:

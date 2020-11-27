@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import datetime
 import time
 
@@ -43,9 +44,119 @@ def get_stochastic(df, n=5, m=3, t=3):
     kdj_j = kdj_d.ewm(span=t).mean()
 
     # dataframe에 컬럼 추가
-    df = df.assign(kdj_k=kdj_k, kdj_d=kdj_d, kdj_j=kdj_j).dropna()
+    df = df.assign(kdj_k=kdj_k, kdj_d=kdj_d, kdj_j=kdj_j)
 
     return df
+# MACD
+# 이동평균선이 수렴과 발산을 반복한다는 원리를 이용해 단기이동평균선과 장기이동평균선 사이의 관계를 보여줌
+# MACD : 단기이동평균과 장기이동평균선의 차이값
+# Signal : MACD의 9일 이동평균값
+# Oscillator : MACD값과 Signal값의 차이
+
+def get_macd(df, short=12, long=26, t=9):
+    df = pd.DataFrame(df)
+
+    # 단기(12) EMA(지수이동평균)
+    ma_12 = df.close.ewm(span=short).mean()
+    # 장기(26) EMA
+    ma_26 = df.close.ewm(span=long).mean()
+
+    # MACD
+    macd = ma_12 - ma_26
+    # Signal
+    macds = macd.ewm(span=t).mean()
+    # Oscillator
+    macdo = macd - macds
+
+    df = df.assign(macd=macd, macds=macds, macdo=macdo)
+
+    return df
+
+def get_cci(df, n=20):
+    df = pd.DataFrame(df)
+
+    # (고가 + 저가 + 종가) / 3
+    M = (df.high + df.low + df.close)/3
+    # M의 n일 단순이동평균
+    m = M.rolling(n).mean()
+    # |M-m|의 n일 단순이동평균
+    d = abs(M-m).rolling(n).mean()
+
+    cci = (M-m) / (d*0.015)
+
+    df = df.assign(cci=cci)
+
+    return df
+
+def calculate_diff(df):
+    df = pd.DataFrame(df)
+
+    diff = df.close.diff()
+    df['diff'] = diff
+
+    D = np.where(df['diff']<0, df['diff'], 0)
+    U = np.where(df['diff']>0, df['diff'], 0)
+
+    df = df.assign(D=D, U=U)
+
+    return df
+
+def get_rsi(df, n=6):
+    df = pd.DataFrame(df)
+
+    AU = df.U.rolling(n).mean()
+    AD = df.D.rolling(n).mean()
+    rsi = np.where(AU+AD==0, 0, AU/(AU+AD))
+
+    df = df.assign(rsi=rsi)
+
+    return df
+
+# 단순 이동평균
+def get_sma(df):
+    df = pd.DataFrame(df)
+
+    sma5 = df.close.rolling(5).mean()
+    sma10 = df.close.rolling(10).mean()
+    sma20 = df.close.rolling(20).mean()
+
+    df = df.assign(sma5=sma5, sma10=sma10, sma20=sma20)
+
+    return df
+# 지수 이동평균
+def get_ema(df):
+    df = pd.DataFrame(df)
+
+    ema5 = df.close.ewm(span=5).mean()
+    ema10 = df.close.ewm(span=10).mean()
+    ema20 = df.close.ewm(span=20).mean()
+
+    df = df.assign(ema5=ema5, ema10=ema10, ema20=ema20)
+
+    return df
+
+# 가중 이동평균
+def wighted_mean(weight_array):
+    def inner(x):
+        return (weight_array * x).mean()
+    return inner
+
+def get_wma(df):
+    df = pd.DataFrame(df)
+
+    weights = np.arange(1,6)
+    wma5 = df.close.rolling(5).apply(lambda prices: np.dot(prices, weights)/weights.sum(), raw=True)
+
+    weights = np.arange(1,11)
+    wma10 = df.close.rolling(10).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
+
+    weights = np.arange(1,21)
+    wma20 = df.close.rolling(20).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
+
+    df = df.assign(wma5=wma5, wma10=wma10, wma20=wma20)
+
+    return df
+
 
 item_name_list = ['삼성전자', 'NAVER', '현대자동차', '포스코', '카카오', 'SK텔레콤', '아모레퍼시픽', '신한지주', '넷마블',
                   '셀트리온', 'SK하이닉스', 'KB금융', 'LG생활건강', '기아자동차', '케이티', 'LG화학',
@@ -84,5 +195,14 @@ for item_name in item_name_list:
     df = df.sort_values(by=['date'], ascending=True)
 
     df = get_stochastic(df)
+    df = get_macd(df)
+    df = get_cci(df)
+    df = get_sma(df)
+    df = get_ema(df)
+    df = get_wma(df)
+    df = calculate_diff(df)
+    df = get_rsi(df)
+    df = df.dropna()
+
     df.to_csv('stockdata/' + item_name + '.csv', mode='w', index=False)
     print('saved ' + item_name + '.csv')

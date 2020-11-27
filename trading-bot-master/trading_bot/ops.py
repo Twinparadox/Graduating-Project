@@ -18,120 +18,63 @@ def sigmoid(x):
         print("Error in sigmoid: " + err)
 
 
-def get_state(open_data, high_data, low_data, close_data, volume_data, date_data, economy_data, t, n_days):
+def get_state(date, close, volume, open, high, low, kdj_k, kdj_d, kdj_j, macd, macds, macdo, cci, rsi, avg5, avg10, avg20, t, n_days):
     """Returns an n-day state representation ending at time t
     """
+
     d = t - n_days + 1
-    pre_5d = t - n_days - 4
-    pre_10d = t - n_days - 9
-    pre_20d = t - n_days - 19
-
-    open_block = open_data[d: t+1] if d >= 0 else -d * [open_data[0]] + open_data[0: t+1]
-    high_block = high_data[d: t+1] if d >= 0 else -d * [high_data[0]] + high_data[0: t+1]
-    low_block = low_data[d: t+1] if d >= 0 else -d * [low_data[0]] + low_data[0: t+1]
-    close_block = close_data[d: t+1] if d >= 0 else -d * [close_data[0]] + close_data[0: t + 1]  # pad with t0
-    volume_block = volume_data[d: t+1] if d >= 0 else -d * [volume_data[0]] + volume_data[0: t + 1]
-
-    # 5일선을 구하기 위해 사용
-    pre_5d_block = close_data[pre_5d: t+1] if pre_5d >= 0 else -pre_5d * [close_data[0]] + close_data[0: t+1]
-    # 10일선을 구하기 위해 사용
-    pre_10d_block = close_data[pre_10d: t+1] if pre_10d >= 0 else -pre_10d * [close_data[0]] + close_data[0: t+1]
-    # 20일선을 구하기 위해 사용
-    pre_20d_block = close_data[pre_20d: t + 1] if pre_20d >= 0 else -pre_20d * [close_data[0]] + close_data[0: t + 1]
-
-    avg_5d_block = []
-    for i in range(n_days):
-        avg_5d = sum(pre_5d_block[i: i+5])/5
-        avg_5d_block.append(avg_5d)
-
-    avg_10d_block = []
-    for i in range(n_days):
-        avg_10d = sum(pre_10d_block[i: i+10])/10
-        avg_10d_block.append(avg_10d)
-
-    avg_20d_block = []
-    for i in range(n_days):
-        avg_20d = sum(pre_20d_block[i: i+30])/30
-        avg_20d_block.append(avg_20d)
-
-    '''
-    date = date_data[t]
-    prevtime = date - relativedelta(months=3)
-    prev_prevtime = prevtime - relativedelta(months=3)
-    prevtime = str(prevtime.date().replace(day=1))
-    prev_previtme = str(prev_prevtime.date().replace(day=1))
-
-    economy_block = economy_data[prev_previtme:prevtime]
-    '''
-
-    # sigmoid 이용
-    '''
-    res = []
-    for i in range(n_days - 1):
-        res.append(sigmoid(open_block[i + 1] - open_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(high_block[i + 1] - high_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(low_block[i + 1] - low_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(close_block[i + 1] - close_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(avg_5d_block[i + 1] - avg_5d_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(avg_10d_block[i + 1] - avg_10d_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid(avg_20d_block[i + 1] - avg_20d_block[i]))
-
-    for i in range(n_days - 1):
-        res.append(sigmoid(volume_block[i+1] - volume_block[i]))
-    '''
-    '''
-    for column in economy_block.columns:
-        for i in range(len(economy_block)-1):
-            res.append(sigmoid(economy_block[column][i+1] - economy_block[column][i]))
-    '''
-
-    # raw값 그대로 이용
-    '''
-    res = []
-    for i in range(n_days - 1):
-        res.append(open_block[i])
-    for i in range(n_days - 1):
-        res.append(high_block[i])
-    for i in range(n_days - 1):
-        res.append(low_block[i])
-    for i in range(n_days - 1):
-        res.append(close_block[i])
-    for i in range(n_days - 1):
-        res.append(avg_5d_block[i])
-    for i in range(n_days - 1):
-        res.append(avg_10d_block[i])
-    for i in range(n_days - 1):
-        res.append(avg_20d_block[i])
-    for i in range(n_days - 1):
-        res.append(volume_block[i])
-    '''
+    open_block = open[d:t+1] if d>=0 else -d * [open[0]] + open[0:t+1]
+    close_block = close[d: t+1] if d >= 0 else -d * [close[0]] + close[0: t + 1]  # pad with t0
+    high_block = high[d:t+1] if d>=0 else -d * [high[0]] + high[0:t+1]
+    low_block = low[d:t+1] if d>=0 else -d * [low[0]] + low[0:t+1]
+    volume_block = volume[d: t+1] if d >= 0 else -d * [volume[0]] + volume[0: t + 1]
+    kdj_k_block = kdj_k[d: t+1] if d >= 0 else -d * [kdj_k[0]] + kdj_k[0: t+1]
+    kdj_d_block = kdj_d[d: t+1] if d >=0 else -d * [kdj_d[0]] + kdj_d[0: t+1]
+    kdj_j_block = kdj_j[d: t+1] if d >= 0 else -d * [kdj_j[0]] + kdj_j[0: t+1]
+    macd_block = macd[d: t+1] if d >= 0 else -d * [macd[0]] + macd[0: t+1]
+    macds_block = macds[d: t + 1] if d >= 0 else -d * [macds[0]] + macds[0: t + 1]
+    macdo_block = macdo[d: t + 1] if d >= 0 else -d * [macdo[0]] + macdo[0: t + 1]
+    cci_block = cci[d: t+1] if d >= 0 else -d * [cci[0]] + cci[0: t + 1]
+    rsi_block = rsi[d: t+1] if d >=0 else -d * [rsi[0]] + rsi[0: t+1]
+    avg5_block = avg5[d: t+1] if d>=0 else -d * [avg5[0]] + avg5[0: t+1]
+    avg10_block = avg10[d: t + 1] if d >= 0 else -d * [avg10[0]] + avg10[0: t + 1]
+    avg20_block = avg20[d: t + 1] if d >= 0 else -d * [avg20[0]] + avg20[0: t + 1]
 
     res = []
+    '''
+    for i in range(n_days - 1):
+        res.append((avg5_block[i + 1] - avg5_block[i]))
+    for i in range(n_days - 1):
+         res.append((avg10_block[i+1] - avg10_block[i]))
+    '''
+    for i in range(n_days - 1):
+        res.append((open_block[i + 1] - open_block[i]))
+    for i in range(n_days - 1):
+        res.append((high_block[i + 1] - high_block[i]))
+    for i in range(n_days - 1):
+        res.append((low_block[i + 1] - low_block[i]))
+    for i in range(n_days - 1):
+        res.append((close_block[i + 1] - close_block[i]))
+    for i in range(n_days - 1):
+        res.append((avg20_block[i + 1] - avg20_block[i]))
+    for i in range(n_days - 1):
+        res.append((volume_block[i + 1] - volume_block[i]))
+    for i in range(n_days-1):
+        res.append(kdj_k_block[i+1])
+    for i in range(n_days-1):
+        res.append(kdj_d_block[i+1])
+    for i in range(n_days-1):
+        res.append(kdj_j_block[i+1])
+    for i in range(n_days-1):
+        res.append(macd_block[i+1])
+    for i in range(n_days-1):
+        res.append(macds_block[i+1])
+    for i in range(n_days-1):
+        res.append(macdo_block[i+1])
+    for i in range(n_days-1):
+        res.append(cci_block[i+1])
+    for i in range(n_days-1):
+        res.append(rsi_block[i+1])
 
-    for i in range(n_days - 1):
-        res.append(sigmoid((open_block[i + 1] - open_block[i])/open_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((high_block[i + 1] - high_block[i])/high_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((low_block[i + 1] - low_block[i])/low_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((close_block[i + 1] - close_block[i])/close_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((avg_5d_block[i + 1] - avg_5d_block[i])/avg_5d_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((avg_10d_block[i + 1] - avg_10d_block[i])/avg_10d_block[i]))
-    for i in range(n_days - 1):
-        res.append(sigmoid((avg_20d_block[i + 1] - avg_20d_block[i])/avg_20d_block[i]))
-    for i in range(n_days - 1):
-        if volume_block[i] == 0:
-            res.append(sigmoid(0))
-        else:
-            res.append(sigmoid((volume_block[i+1] - volume_block[i])/volume_block[i]))
 
     return np.array([res])

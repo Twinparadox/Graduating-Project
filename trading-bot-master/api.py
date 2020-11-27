@@ -110,27 +110,28 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
     profit = 0
     reward = 0
     delta = 0
-    next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, t+1, window_size + 1)
+    next_state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8],
+                               data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], 0, window_size + 1)
     print(state)
-    if agent.asset >= data[3][t]:
+    if agent.asset >= data[1][t]:
         action = agent.buy_act(state)
 
         if action == 1:
             num_buy += 1
-            nStocks = agent.asset // data[3][t]
+            nStocks = agent.asset // data[1][t]
 
-            agent.asset -= nStocks * data[3][t]
-            agent.inventory.append([data[3][t], nStocks])
+            agent.asset -= nStocks * data[1][t]
+            agent.inventory.append([data[1][t], nStocks])
 
-            history.append({"index":t, "date":date_list[t], "price":data[3][t], "nStocks":nStocks, "volume":nStocks, "action":"Buy"})
+            history.append({"index":t, "date":date_list[t], "price":data[1][t], "nStocks":nStocks, "volume":nStocks, "action":"Buy"})
             if debug:
-                logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[3][t]), nStocks, t))
+                logging.debug("Buy at: {}, {} | Day_Index: {}".format(format_currency(data[1][t]), nStocks, t))
         else:
             num_buy_hold += 1
-            history.append({"index":t, "date":date_list[t], "price":data[3][t], "volume":0, "action":"Buy Hold"})
+            history.append({"index":t, "date":date_list[t], "price":data[1][t], "volume":0, "action":"Buy Hold"})
             if debug:
                 logging.debug("Buy hold, Hold at: {} | Day_Index: {}".format(
-                    format_currency(data[3][t]), t))
+                    format_currency(data[1][t]), t))
 
     else:
         action = agent.sell_act(state)
@@ -145,22 +146,22 @@ def trade_stock(agent, data, date_list, window_size, state, debug):
             agent.inventory = []
 
             bought_sum = np.array(stock_list).sum()
-            delta = data[3][t] * nStocks - bought_sum
-            agent.asset += data[3][t] * nStocks
+            delta = data[1][t] * nStocks - bought_sum
+            agent.asset += data[1][t] * nStocks
             reward = delta / bought_sum
             total_profit += delta
 
-            history.append({"index": t, "date": date_list[t], "price": data[3][t], "nStocks": nStocks, "volume": nStocks,
+            history.append({"index": t, "date": date_list[t], "price": data[1][t], "nStocks": nStocks, "volume": nStocks,
                             "action": "Sell"})
             if debug:
                 logging.debug("Sell at: {} {} | Position: {} | Total: {} | Reward: {} | Day_Index: {}".format(
-                    format_currency(data[3][t]), nStocks, format_position(delta), format_position(total_profit), reward,
+                    format_currency(data[1][t]), nStocks, format_position(delta), format_position(total_profit), reward,
                     t))
         else:
             num_sell_hold += 1
-            history.append({"index": t, "date": date_list[t], "price": data[3][t], "volume": 0, "action": "Sell Hold"})
+            history.append({"index": t, "date": date_list[t], "price": data[1][t], "volume": 0, "action": "Sell Hold"})
             if debug:
-                logging.debug("Sell Hold, Hold at: {} | Day_Index: {}".format(format_currency(data[3][t]), t))
+                logging.debug("Sell Hold, Hold at: {} | Day_Index: {}".format(format_currency(data[1][t]), t))
 
 
 
@@ -202,9 +203,9 @@ def time_lapse(**kwargs):
 
 if __name__ == '__main__':
     #args = docopt(__doc__)
-    eval_stock = 'data/SS_2019.csv'
+    eval_stock = 'stockdata/삼성2.csv'
     economy = 'data/economy_leading_2005.csv'
-    model_name = 'model_debug_2'
+    model_name = 'model_debug_22'
     debug = '--debug'
 
     coloredlogs.install(level="DEBUG")
@@ -216,14 +217,15 @@ if __name__ == '__main__':
     data = get_stock_data(eval_stock)
     date_list = get_date(eval_stock)
     economy_data = get_economy_data(economy)
-    initial_offset = data[3][1] - data[3][0]
+    initial_offset = data[1][1] - data[1][0]
     data_length = len(data[0]) - 1
     print("data_length :", data_length)
     agent = Agent(window_size, pretrained=True, model_name=model_name)
     agent.asset = 1e7
     agent.inventory = []
 
-    state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], economy_data, 0, window_size + 1)
+    state = get_state(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8],
+                               data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], 0, window_size + 1)
 
     ### TODO: args가 과연 필요한가에 대한 파악 필요
     kwargs = {"agent":agent, "data":data, "date_list":date_list, "window_size":window_size, "debug":debug}

@@ -13,10 +13,10 @@ Options:
                                       `t-dqn` i.e. DQN with fixed target distribution,
                                       `double-dqn` i.e. DQN with separate network for value estimation. [default: dqn]
   --window-size=<window-size>       Size of the n-day window stock data representation
-                                    used as the feature vector. [default: 10]
+                                    used as the feature vector. [default: 1]
   --batch-size=<batch-size>         Number of samples to train on in one mini-batch
                                     during training. [default: 32]
-  --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 1000]
+  --episode-count=<episode-count>   Number of trading episodes to use for training. [default: 500]
   --model-name=<model-name>         Name of the pretrained model to use. [default: model_debug]
   --pretrained                      Specifies whether to continue training a previously
                                     trained model (reads `model-name`).
@@ -39,6 +39,9 @@ from trading_bot.utils import (
     switch_k_backend_device
 )
 
+import matplotlib.pyplot as plt
+import csv
+
 def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
          strategy="dqn", model_name="model_debug", pretrained=False,
          debug=False):
@@ -58,19 +61,47 @@ def main(train_stock, val_stock, economy, window_size, batch_size, ep_count,
     val_data = get_stock_data(val_stock)
 
     # 첫 째날과 둘 째 날의 종가의 차
-    initial_offset = val_data[3][1] - val_data[3][0]
+    initial_offset = val_data[1][1] - val_data[1][0]
     last_checkpoint = 0
 
+    f = open(model_name + ' result.csv', 'w', encoding='utf-8', newline='')
+    wr = csv.writer(f)
+    wr.writerow(['train', 'test'])
+
+    f2 = open(model_name + ' loss.csv', 'w', encoding='utf-8', newline='')
+    wr2 = csv.writer(f2)
+    wr2.writerow(['episod', 'loss'])
+    asset = []
+    loss = []
     for episode in range(1, ep_count + 1):
         print('train episode : ', episode)
         train_result, is_earlystopping = train_model(agent, episode, train_data, economy_data, ep_count=ep_count,
-                                                     batch_size=batch_size, window_size=window_size, last_checkpoint=last_checkpoint)
-        val_result, _ = evaluate_model(agent, val_data, economy_data, window_size, debug)
+                                                     batch_size=batch_size, window_size=window_size, last_checkpoint=last_checkpoint, model_name=model_name)
+        val_result, val_asset, _ = evaluate_model(agent, val_data, economy_data, window_size, debug, episode, model_name=model_name)
         show_train_result(train_result, val_result, initial_offset)
 
+        asset.append(train_result[3])
+        loss.append(train_result[4])
         if is_earlystopping == False:
             last_checkpoint = episode
 
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(asset)
+        plt.savefig(model_name + ' total asset')
+        plt.close(fig)
+
+        fig2 = plt.figure()
+        ax2 = fig2.add_subplot(1, 1, 1)
+        ax2.plot(loss)
+        plt.savefig(model_name + ' loss')
+        plt.close(fig2)
+
+        wr.writerow([train_result[3], val_asset])
+        wr2.writerow([episode, train_result[4]])
+
+    f.close()
+    f2.close()
 
 if __name__ == "__main__":
     args = docopt(__doc__)

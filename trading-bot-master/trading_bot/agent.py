@@ -30,11 +30,11 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 class Agent:
     """ Stock Trading Bot """
     # 초기화
-    def __init__(self, state_size, strategy="dqn", reset_n_iter=100, pretrained=False, model_name=None):
+    def __init__(self, state_size, strategy="dqn", reset_n_iter=5, pretrained=False, model_name=None):
         self.strategy = strategy
 
         # agent config
-        self.state_size = state_size*8 	# open_data, hight_data, low_data, colse_data, volumn_data, 5_days_average, 10_days_average
+        self.state_size = state_size*14	# open_data, hight_data, low_data, colse_data, volumn_data, 5_days_average, 10_days_average
         self.action_size = 2           		# [sit, buy, sell]
         self.buy_model_name = 'buy_' + model_name
         self.sell_model_name = 'sell_' + model_name
@@ -48,14 +48,11 @@ class Agent:
         # model config
         self.buy_model_name = 'buy_' + model_name
         self.sell_model_name = 'sell_' + model_name
-        self.hold_gamma = 0.5
-        self.buy_gamma = 0.95
-        self.sell_gamma = 0
-        self.gamma = 0.95 # affinity for long term reward
+        self.gamma = 0.001 # affinity for long term reward
         self.buy_epsilon = 1.0
         self.sell_epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999
         self.learning_rate = 0.001
         self.loss = huber_loss
         self.custom_objects = {"huber_loss": huber_loss}  # important for loading the model from memory
@@ -84,10 +81,10 @@ class Agent:
         """Creates the model
         """
         model = Sequential()
-        model.add(Dense(units=128, activation="relu", input_dim=self.state_size))
+        model.add(Dense(units=256, activation="relu", input_dim=self.state_size))
+        model.add(Dense(units=512, activation="relu"))
+        model.add(Dense(units=512, activation="relu"))
         model.add(Dense(units=256, activation="relu"))
-        model.add(Dense(units=256, activation="relu"))
-        model.add(Dense(units=128, activation="relu"))
         model.add(Dense(units=self.action_size))
 
         model.compile(loss=self.loss, optimizer=self.optimizer)
@@ -95,12 +92,12 @@ class Agent:
 
     def buy_remember(self, state, action, reward, next_state, done):
 
-        self.buy_memory.appendleft((state, action, reward, next_state, done))
-
+        # self.buy_memory.appendleft((state, action, reward, next_state, done))
+        self.buy_memory.append((state, action, reward, next_state, done))
     def sell_remember(self, state, action, reward, next_state, done):
 
-        self.sell_memory.appendleft((state, action, reward, next_state, done))
-
+        # self.sell_memory.appendleft((state, action, reward, next_state, done))
+        self.sell_memory.append((state, action, reward, next_state, done))
 
     def buy_act(self, state, is_eval=False):
         # buy action
@@ -129,19 +126,19 @@ class Agent:
         return np.argmax(action_probs[0])
 
     def train_experience_replay(self, batch_size, reset):
-        '''
+
         # target model update
         if self.n_iter % self.reset_n_iter == 0:
             self.target_buy_model = self.buy_model
             self.target_sell_model = self.sell_model
-        '''
+
         if reset:
             self.target_buy_model = self.buy_model
             self.target_sell_model = self.sell_model
 
         '''buy 모델'''
-        # buy_mini_batch = random.sample(self.buy_memory, batch_size)
-        buy_mini_batch = list(itertools.islice(self.buy_memory, None, batch_size))
+        buy_mini_batch = random.sample(self.buy_memory, batch_size)
+        # buy_mini_batch = list(itertools.islice(self.buy_memory, None, batch_size))
 
         buy_X_train, buy_y_train = [], []
         # DQN
@@ -155,10 +152,10 @@ class Agent:
                 else:
                     # buy
                     if (action == 1):
-                        target = reward + self.buy_gamma * np.amax(self.sell_model.predict(next_state)[0])
+                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
                     # hold
                     else:
-                        target = reward + self.hold_gamma * np.amax(self.buy_model.predict(next_state)[0])
+                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
                 # estimate q-values based on current state
                 q_values = self.buy_model.predict(state)
                 # update the target for current action based on discounted reward
@@ -195,8 +192,8 @@ class Agent:
         if self.buy_epsilon > self.epsilon_min:
             self.buy_epsilon *= self.epsilon_decay
         '''sell 모델'''
-        # sell_mini_batch = random.sample(self.sell_memory, batch_size)
-        sell_mini_batch = list(itertools.islice(self.sell_memory, None, batch_size))
+        sell_mini_batch = random.sample(self.sell_memory, batch_size)
+        # sell_mini_batch = list(itertools.islice(self.sell_memory, None, batch_size))
 
         sell_X_train, sell_y_train = [], []
 
@@ -212,10 +209,10 @@ class Agent:
                     # sell
                     if (action == 1):
                         # approximate deep q-learning equation
-                        target = reward + self.sell_gamma * np.amax(self.buy_model.predict(next_state)[0])
+                        target = reward + self.gamma * np.amax(self.buy_model.predict(next_state)[0])
                     # hold
                     else:
-                        target = reward + self.hold_gamma * np.amax(self.sell_model.predict(next_state)[0])
+                        target = reward + self.gamma * np.amax(self.sell_model.predict(next_state)[0])
                 # estimate q-values based on current state
                 q_values = self.sell_model.predict(state)
                 # update the target for current action based on discounted reward

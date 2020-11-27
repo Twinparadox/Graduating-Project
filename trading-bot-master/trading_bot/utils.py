@@ -42,8 +42,14 @@ def get_stock_data(stock_file):
     """Reads stock data from csv file
     """
     df = pd.read_csv(stock_file)
-    df['Date'] = pd.to_datetime(df['Date'], format="%Y-%m")
-    return list(df['Open']), list(df['High']), list(df['Low']), list(df['Close']), list(df['Volume']), list(df['Date'])
+    df['date'] = pd.to_datetime(df['date'], format="%Y-%m")
+    return list(df['date']), list(df['close']), list(df['volume']), \
+           list(df['open']), list(df['high']), list(df['low']), \
+           list(df['kdj_k']), list(df['kdj_d']), list(df['kdj_j']), \
+           list(df['macd']), list(df['macds']), list(df['macdo']), list(df['cci']), list(df['rsi']), \
+           list(df['ema5']), list(df['ema10']), list(df['ema20']), \
+           list(df['sma5']), list(df['sma10']), list(df['sma20']), \
+           list(df['wma5']), list(df['wma10']), list(df['wma20'])
 
 def get_economy_data(economy_file):
     print('get_economy_data')
@@ -60,8 +66,8 @@ def get_date(stock_file):
     print('get_date()')
 
     df = pd.read_csv(stock_file)
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
-    return list(df['Date'])
+    df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    return list(df['date'])
 
 def switch_k_backend_device():
     """ Switches `keras` backend from GPU to CPU if required.
